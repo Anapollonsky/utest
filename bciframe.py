@@ -1,10 +1,8 @@
 class bciframe(utestframe):
 
-    def __init__(self, command):
+    def __init__(self, command, connection):
         separated = command.strip().split(" ")
         self.command = separated[0]
         self.args = separated[1:]
+        self.conn = connection
         
-    @classmethod
-    def spawnconnect(address):
-        self.con = pexpect.spawn("telnet " + address + " 7006")

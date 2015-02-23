@@ -1,17 +1,20 @@
-include: sampletest.yaml
+include: sampletest2.yaml
 
-global-append:
+global:
   reject-regex:
     - (?i)error
   variables:
     var1: value
     var2: "other_value"
-
+  wait: 4
+  timeout: 20
+  
 bcicommand:
   send: /pltf/i2c/eeprom_filter_read
   expect:
     - 0x
-  expect-regex:
+  reject-regex:
+    - whoa
 
 ard546command:
   send: |
@@ -20,8 +23,6 @@ ard546command:
     TRANSACTION: ID=1 
     ALDDEVDATA: INDEX=1 ALDSUB=1 FIELDNUM=0X21 FIELDLENGTH=6 FIELDDATA=0X44454647,0X4849000
     ]
-
-global-overwrite:
   
 shcommand:
   send: cd /log; cat LAUNCH_LOG

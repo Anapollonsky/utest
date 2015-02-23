@@ -48,6 +48,10 @@ builtinPriority = {
     ,"rejext-regex": 2
     }
 
+
+def sendrec(los):
+    
+
 def parse_yaml_file(thefile):
     try:
         infile = open(thefile, 'r')

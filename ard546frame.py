@@ -6,6 +6,3 @@ class ard546frame(utestframe):
         self.frametype = frametyperegex.group(1)
 
         
-    @classmethod
-    def spawnconnect(address):
-        self.con = pexpect.spawn("telnet " + address + " 1307")
