@@ -1,11 +1,16 @@
+import sys
+
 def notify(level, message):
     """Perform formatting of output based on level parameter."""
     if level == "bas": # basic message
-        print(message)
+        print("\n" + message)
     elif level == "not": # special notification
-        print("> " + message)
+        print("\n> " + message)
+    elif level == "tf": # Test Failure
+        print("\n###" + message + "###")
+        sys.exit()        
     elif level == "fe": # fatal error
-        print(">>> " + message + " <<<")
+        print("\n>>> " + message + " <<<")
         sys.exit()
 
 
@@ -22,9 +27,10 @@ def recursive_dict_merge(a, b):
             else:
                 a[key] = b[key]
     elif isinstance(a, list) and isinstance(b, list):
-        a.append(b)
+        for k in b:
+            a.append(k)
     else:
         print("Merge error! " + str(a) + str(b))
         sys.exit()
     return a
-        
+    
