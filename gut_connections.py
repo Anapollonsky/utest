@@ -3,7 +3,7 @@ import sys
 import pexpect
 
 class Conman:
-    """Class responsible for managing pexpect connections and different frame types."""
+    """Singleton class responsible for managing pexpect connections and different frame types."""
     connections = []
     
     def __init__(self, trace):
@@ -43,6 +43,10 @@ class Conman:
     
     ## Connection Management    
     def openconnection(self, interface, address):
+        """Open a connection to target and return, or return existing connection."""
+        for connection in Conman.connections: # Check if connection exists
+            if connection.address == address and connection.interface == interface:
+                return connection
         conn = Conman.connfuncdict[interface](address)
         if conn:
             ut.notify("message", "Connected to " + interface + " at " + address)
@@ -53,14 +57,14 @@ class Conman:
         Conman.connections.append(conn)
         return conn
 
-    def sendframe(self, interface, address, content):
-        for connection in Conman.connections:
-            if connection.address == address and connection.interface == interface:
-                connection.sendline(content)
-                return connection
-        connection = self.openconnection(interface, address)
-        connection.sendline(content)
-        return connection
+    def sendframe(self, frame):
+        """Transmit a frame object's message to intended recipient."""
+        if frame.connection not in Conman.connections:
+            ut.notify("fe", "Frame connection to " + frame.connection.address + " over " + frame.connection.interface + " not found in the connection manager. Exiting.")
+        else:
+            connection = self.openconnection(frame.connection.interface, frame.connection.address)
+            connection.sendline(frame.send)
+            return connection
 
     def closeconnection(self, connection):
         connection.close()
