@@ -36,9 +36,9 @@ class Conman:
     }
 
     conncommdict = {
-         "ard546": "ard546command"
-        ,"sh": "shcommand"
-        ,"bci": "bcicommand"
+         "ard546": "ard546"
+        ,"sh": "sh"
+        ,"bci": "bci"
     }
     
     ## Connection Management    

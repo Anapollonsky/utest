@@ -2,8 +2,7 @@ import time
 import pexpect
 import re
 import utils as ut
-
-
+        
 class Frame:
     """Representation of a sent/received frame."""
     
