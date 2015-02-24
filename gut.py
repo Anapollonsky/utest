@@ -10,12 +10,13 @@ import yaml
 from copy import deepcopy
 
 
-from gut_connections import *
+# from gut_connections import *
 # from utils import *
 import utils as ut
-import parser_functions as pf
+from gut_connections import Conman
+from gut_frame import Frame
 
-VERSION = 1
+VERSION = 1 
 
 global glo, globase
 global global_command_queue
@@ -24,14 +25,15 @@ los = {}
 cons = ["sh",
         "bci",
         "ard546"]
+
 sym = {"sh": "shcommand",
        "bci":"bcicommand",
-       "546":"ard546command",
+       "ard546":"ard546command",
        "inc":"include",
        "glo":"global",
        "var":"variables",
-       "rreg":"reject-regex",
-       "reg":"reject",
+       "rrej":"reject-regex",
+       "rej":"reject",
        "expr":"expect-regex",
        "exp":"expect",
        "send":"send",
@@ -47,21 +49,21 @@ builtinPriority = {"wait": 0,
                    "expect-regex": 2,
                    "reject-regex": 2}
 
-globase= {sym["rreg"]: [],
-          sym["reg"]: [],
+globase= {sym["rrej"]: [],
+          sym["rej"]: [],
           sym["expr"]: [],
           sym["exp"]: [],
           sym["wait"]: .2,
           sym["tout"]: 10}
 glo = deepcopy(globase)
 
-def sendrec(los):
+def sendrec(frame):
     global conn, board, sym
-    tempconn = conn.sendframe(los[sym["interface"]], board, los[sym["send"]])
-    diminishing_expect = los[sym["expr"]]
+    tempconn = conn.sendframe(frame.interface, board, frame.send)
+    diminishing_expect = frame.expect_regex + [re.escape(x) for x in frame.expect]
     captured_lines_global = []
     captured_lines_local = []
-    timer = los[sym["tout"]]
+    timer = frame.timeout
     while diminishing_expect:
         iter_time = time.time()
         temp_expect = list(diminishing_expect)
@@ -71,7 +73,9 @@ def sendrec(los):
         capture = tempconn.after
         if i == 0:
             ut.notify("tf", "Timeout while waiting for the following substrings:\n" + str(diminishing_expect) + "\nExiting.")
-        if any([re.search(k, capture) for k in los[sym["rreg"]]]):
+        if any([re.search(k, capture) for k in frame.reject_regex]):
+            ut.notify("tf", "Captured rejected regex substring in response:\n" + k + "\nExiting.")
+        if any([re.search(k, capture) for k in [re.escape(x) for x in frame.reject]]):
             ut.notify("tf", "Captured rejected substring in response:\n" + k + "\nExiting.")
         for k in diminishing_expect[:]:
             match = re.search(k, capture)
@@ -80,9 +84,10 @@ def sendrec(los):
             diminishing_expect.remove(k)
         for k in captured_lines_local:
             ut.notify("not", "Captured in response:\n" + k + "\n")
-    time.sleep(los[sym["wait"]])
+    time.sleep(frame.wait)
 
 def parse_yaml_file(thefile):
+    """Take a YAML file and parse it in such a way that the upper-most dictionary is instead saved as a list, for sequential access."""
     try:
         infile = open(thefile, 'r')
     except IOError:
@@ -93,6 +98,7 @@ def parse_yaml_file(thefile):
     return yamlparse
     
 def include_file(thefile):
+    """Include the YAML commands defined in another file. The commands are added in-place."""
     global global_command_queue
     ut.notify("not", "Including file " + thefile)
     include_queue = parse_yaml_file(thefile)
@@ -102,27 +108,30 @@ def include_file(thefile):
     global_command_queue.reverse()
         
 def parse_block(block):
+    """Depending on what kind of block is given, merge settings with globals and move to next stage."""
     global glo, board, sym
     if sym["glo"] in block:
         glo = deepcopy(globase)
         ut.recursive_dict_merge(glo, block[sym["glo"]])
     elif sym["inc"] in block:
         include_file(block[sym["inc"]])
-    elif sym["bci"] in block:
-        los = block[sym["bci"]]
-        los[sym["interface"]] = "bci"
+    elif any([x in block for x in Conman.conncommdict.values()]):
+        for k in Conman.conncommdict:
+            if Conman.conncommdict[k] in block:
+                interface = k
+        print block
+        los = block[Conman.conncommdict[interface]]
+        los["interface"] = interface
         ut.recursive_dict_merge(los, glo)
-        sendrec(los)
-    elif sym["sh"] in block:
-        los = block[sym["sh"]]
-        los[sym["interface"]] = "sh"
-        ut.recursive_dict_merge(los, glo)
-        sendrec(los)        
-    elif sym["546"] in block:
-        los = block[sym["546"]]
-        los[sym["interface"]] = "ard546"
-        ut.recursive_dict_merge(los, glo)
-        sendrec(los) 
+
+        new_frame = Frame(interface, los[sym["send"]])
+        new_frame.expect = los[sym["exp"]]
+        new_frame.expect_regex = los[sym["expr"]]
+        new_frame.reject = los[sym["rej"]]
+        new_frame.reject_regex = los[sym["rrej"]]
+        new_frame.wait = los[sym["wait"]]
+        new_frame.timeout = los[sym["tout"]]        
+        sendrec(new_frame)
 
 if __name__ == "__main__":
     # Parse command-line arguments
@@ -139,7 +148,8 @@ if __name__ == "__main__":
 
     global conn
     global board
-    conn = gut_connections()
+    print args.verbose
+    conn = Conman(args.verbose)
     board = args.board
     
     while global_command_queue:

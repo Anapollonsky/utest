@@ -2,13 +2,12 @@ import utils as ut
 import sys
 import pexpect
 
-class gut_connections:
-
+class Conman:
+    """Class responsible for managing pexpect connections and different frame types."""
     connections = []
-
     
-    def __init__(self):
-        pass
+    def __init__(self, trace):
+        self.trace_level = trace
 
     ## Connection list        
     def ard546connect(address):
@@ -30,25 +29,32 @@ class gut_connections:
         con.sendline("password")
         return con
 
-    conndict = {
+    connfuncdict = {
          "ard546": ard546connect
         ,"sh": shconnect
         ,"bci": bciconnect
     }
 
+    conncommdict = {
+         "ard546": "ard546command"
+        ,"sh": "shcommand"
+        ,"bci": "bcicommand"
+    }
+    
     ## Connection Management    
     def openconnection(self, interface, address):
-        conn = gut_connections.conndict[interface](address)
+        conn = Conman.connfuncdict[interface](address)
         if conn:
             ut.notify("message", "Connected to " + interface + " at " + address)
         conn.address = address
         conn.interface = interface
-        conn.logfile_read = sys.stdout
-        gut_connections.connections.append(conn)
+        if self.trace_level == 3:
+            conn.logfile_read = sys.stdout
+        Conman.connections.append(conn)
         return conn
 
     def sendframe(self, interface, address, content):
-        for connection in gut_connections.connections:
+        for connection in Conman.connections:
             if connection.address == address and connection.interface == interface:
                 connection.sendline(content)
                 return connection
@@ -61,6 +67,6 @@ class gut_connections:
         del connection
 
     def closeallconnections(self):
-        for connection in gut_connections.connections:
+        for connection in Conman.connections:
             connection.close()
             del connection
