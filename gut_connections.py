@@ -1,6 +1,7 @@
 import utils as ut
 import sys
 import pexpect
+import os
 
 class Conman:
     """Singleton class responsible for managing pexpect connections and different frame types."""
@@ -63,7 +64,7 @@ class Conman:
             ut.notify("fe", "Frame connection to " + frame.connection.address + " over " + frame.connection.interface + " not found in the connection manager. Exiting.")
         else:
             connection = self.openconnection(frame.connection.interface, frame.connection.address)
-            connection.sendline(frame.send)
+            connection.sendline(frame.send["content"])
             return connection
 
     def closeconnection(self, connection):
@@ -74,3 +75,9 @@ class Conman:
         for connection in Conman.connections:
             connection.close()
             del connection
+
+    def updateterminal(self):
+        term_size = os.get_terminal_size
+        self.terminal.cols = term_size.columns
+        self.terminal.rows = term_size.lines  
+        

@@ -1,29 +1,56 @@
-include: sampletest2.yaml
-
 global:
   reject-regex:
-    - (?i)error
-  variables:
-    var1: value
-    var2: "other_value"
-  wait: 4
-  timeout: 20
+    array:
+      - (?i)error
+  vars:
+    dict:
+      "lolwhat": "CLI_OK"
   
 bcicommand:
-  send: /pltf/i2c/eeprom_filter_read
-  expect:
-    - 0x
-  reject-regex:
-    - whoa
+  send:
+    content: /oam/hwVersion
+  expect-regex:
+    - CLI_OK
+    - BoardType
+    - CPLD 
+  timeout: 7
+  reject:
+    array:
+      - "test"
 
-ard546command:
-  send: |
-    [
-    MESSAGE: TYPE=SET 
-    TRANSACTION: ID=1 
-    ALDDEVDATA: INDEX=1 ALDSUB=1 FIELDNUM=0X21 FIELDLENGTH=6 FIELDDATA=0X44454647,0X4849000
-    ]
-  
 shcommand:
-  send: cd /log; cat LAUNCH_LOG
+  send: echo lolwhat
+  expect-regex:
+    array:
+      - CLI_OK
+      
+# bcicommand:
+#   send:
+#     content: /pltf/i2c/eeprom_filter/read 20 30
+#   expect-regex:
+#     array:
+#       - "ff"
+#   reject:
+#     array:
+#       - "aou"
+      
+# ard546command:
+#   send:
+#     content: |
+#       [
+#       MESSAGE: TYPE=SET 
+#       TRANSACTION: ID=1 
+#       ALDDEVDATA: INDEX=1 ALDSUB=1 FIELDNUM=0X21 FIELDLENGTH=6 FIELDDATA=0X44454647,0X4849000
+#       ]
+#   expect-regex:
+#     array:
+#       - \[
   
+
+# shcommand:
+#   send:
+#     content: cd /log; ls; 
+#   expect-regex:
+#     array:
+#       - launch
+      

@@ -1,18 +1,19 @@
 import sys
 
-def notify(level, message):
+def notify(level, message): 
     """Perform formatting of output based on level parameter."""
     if level == "bas": # basic message
-        print("\n" + message)
+        print("" + message.strip())
     elif level == "not": # special notification
-        print("\n> " + message)
+        print("> " + message.strip())
+    elif level == "update": # special notification
+        print(">>> " + message.strip())        
     elif level == "tf": # Test Failure
-        print("\n###" + message + "###")
+        print("###" + message.strip() + "\n Exiting.###")
         sys.exit()        
     elif level == "fe": # fatal error
-        print("\n>>> " + message + " <<<")
+        print("### " + message.strip() + "\n Exiting. ###")
         sys.exit()
-
 
 # http://stackoverflow.com/questions/7204805/dictionaries-of-dictionaries-merge
 def recursive_dict_merge(a, b):

@@ -1,26 +1,29 @@
 import yaml
 import re
-import utils as ut
+import gut_utils as ut
 from gut_frame import Frame
 
-# Symbol table
+# Symbol table. Used to map yaml-file names to internal names, when necessary
 sym = {"sh": "shcommand", 
        "bci":"bcicommand",
        "ard546":"ard546command",
        "inc":"include",
        "glo":"global",
        "var":"variables",
-       "rrej":"reject-regex",
-       "rej":"reject",
-       "expr":"expect-regex",
-       "exp":"expect",
-       "send":"send",
-       "wait":"wait",
-       "tout":"timeout"}
+       "reject_regex":"reject-regex",
+       "reject":"reject",
+       "expect_regex":"expect-regex",
+       "expect":"expect",
+       "set_expect_timeout":"timeout",
+       "wait-after":"wait_after",
+       "wait-before":"wait_before",
+       "wait-time":"wait_time", 
+       "var_in_dict":"dict",
+       "send_variable_replace":"vars"}
 
-def symbol_substitutions(instr, symbols):
+def symbol_substitutions(input_string, symbols):
     """Perform substitutions in the string, replacing all 'values' from an external dictionary with the corresponding 'keys'."""
-    outstr = str(instr)
+    outstr = str(input_string)
     for i, k in symbols.items():
         outstr = re.sub(k, i, outstr)
     return outstr
@@ -31,20 +34,7 @@ def parse_yaml_file(thefile):
         infile = open(thefile, 'r')
     except IOError:
         ut.notify("fatalerror", "Failed to open file " + thefile + ", exiting")
-
     substituted_string = symbol_substitutions(infile.read(), sym)
     yamlsplit = re.split("\n(?!\s)", substituted_string.strip())
     yamlparse = [yaml.load(x) for x in yamlsplit if x[0] != '#']
     return yamlparse
-
-def frameFromLos(conman, los):
-    """Generate a frame from a dictionary of local settings."""
-    frame = Frame(los["send"])
-    frame.expect = los["exp"]
-    frame.expect_regex = los["expr"]
-    frame.reject = los["rej"]
-    frame.reject_regex = los["rrej"]
-    frame.wait = los["wait"]
-    frame.timeout = los["tout"]
-    frame.connection = conman.openconnection(los["interface"], los["board"])
-    return frame
