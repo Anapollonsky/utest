@@ -1,7 +1,7 @@
 import time
 import pexpect
 import re
-import utils as ut
+import gut_utils as ut
 import gut_analyze as an
 import inspect
         
@@ -19,22 +19,22 @@ class Frame:
         run them with the proper arguments in the order as determined by the functions' priority"""
         # Look through available functions, check if they're referenced on the frame object, and put those that are on a list.
         functions = [method for name, method in an.__dict__.iteritems() if (callable(method) and hasattr(method, "priority") and hasattr(self, method.__name__))]
-
         # Sort by priority in ascending order
-        functions.sort(key=lambda x: x.priority)         
+        functions.sort(key=lambda x: x.priority)
+        
         for func in functions:
             # If the argument is a dictionary of arguments, match every value to a argument with the same name as the key of that value.
             func_args = dict(getattr(self, func.__name__))
             ut.recursive_dict_merge(func_args, func.defaults)
             func_arg_names = inspect.getargspec(func).args
             if (func.quiet == False): 
-                self.conman.message("Running function " + func.__name__ + "...")
+                self.conman.message(2, "Running function " + func.__name__ + "...")
             func(self, **func_args)
 
     @staticmethod
     def frameFromLos(conman, los):
         """Generate a frame from a dictionary of local settings."""
-        conman.block(los["interface"])
+        conman.message(3, "Sending " + los["interface"] + " frame")
         frame = Frame()
         # Construct a list of all available functions that have a priority attribute.
         functions = [method for name, method in an.__dict__.iteritems() if (callable(method) and hasattr(method, "priority"))]
@@ -61,4 +61,5 @@ class Frame:
         frame.conman = conman
         frame.connection = frame.conman.openconnection(los["interface"], los["address"]) 
         frame.conman.updateterminal() # Update the terminal on every frame sent. Not necessary, but performance isn't an issue right now.
+
         return frame

@@ -19,6 +19,7 @@ bcicommand:
       - "test"
 
 shcommand:
+  address: 135.112.98.30
   send: echo lolwhat
   expect-regex:
     array:
@@ -29,7 +30,7 @@ bcicommand:
     content: /pltf/i2c/eeprom_filter/read 20 30
   expect-regex:
     array:
-      - "ff"
+      - "00"
   reject:
     array:
       - "aou"

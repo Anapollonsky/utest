@@ -61,7 +61,7 @@ def expect(frame, array):
                 captured_lines_local.append(k)
                 diminishing_expect.remove(k)
         for k in captured_lines_local:
-            frame.conman.message("Captured in response: " + k.strip())
+            frame.conman.message(1, "Captured in response: " + k.strip())
         frame.addresponse(capture)
 expect.priority = 6
 
@@ -84,7 +84,7 @@ def expect_regex(frame, array):
                 captured_lines_local.append(k)
                 diminishing_expect.remove(k)
         for k in captured_lines_local:
-            frame.conman.message("Captured in response: " + k.strip())
+            frame.conman.message(1, "Captured in response: " + k.strip())
         frame.addresponse(capture)
 expect_regex.priority = 6
 
