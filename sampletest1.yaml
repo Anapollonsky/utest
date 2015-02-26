@@ -1,7 +1,4 @@
 global:
-  reject-regex:
-    array:
-      - (?i)error
   vars:
     dict:
       "lolwhat": "CLI_OK"
@@ -28,9 +25,9 @@ shcommand:
 bcicommand:
   send:
     content: /pltf/i2c/eeprom_filter/read 20 30
-  expect-regex:
-    array:
-      - "00"
+  # expect-regex:
+  #   array:
+  #     - "00"
   reject:
     array:
       - "aou"
@@ -46,7 +43,7 @@ ard546command:
   expect-regex:
     array:
       - \[
-  
+      - (?i)error      
 
 # shcommand:
 #   send:
