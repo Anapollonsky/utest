@@ -24,27 +24,27 @@ shcommand:
     array:
       - CLI_OK
       
-# bcicommand:
-#   send:
-#     content: /pltf/i2c/eeprom_filter/read 20 30
-#   expect-regex:
-#     array:
-#       - "ff"
-#   reject:
-#     array:
-#       - "aou"
+bcicommand:
+  send:
+    content: /pltf/i2c/eeprom_filter/read 20 30
+  expect-regex:
+    array:
+      - "ff"
+  reject:
+    array:
+      - "aou"
       
-# ard546command:
-#   send:
-#     content: |
-#       [
-#       MESSAGE: TYPE=SET 
-#       TRANSACTION: ID=1 
-#       ALDDEVDATA: INDEX=1 ALDSUB=1 FIELDNUM=0X21 FIELDLENGTH=6 FIELDDATA=0X44454647,0X4849000
-#       ]
-#   expect-regex:
-#     array:
-#       - \[
+ard546command:
+  send:
+    content: |
+      [
+      MESSAGE: TYPE=SET 
+      TRANSACTION: ID=1 
+      ALDDEVDATA: INDEX=1 ALDSUB=1 FIELDNUM=0X21 FIELDLENGTH=6 FIELDDATA=0X44454647,0X4849000
+      ]
+  expect-regex:
+    array:
+      - \[
   
 
 # shcommand:

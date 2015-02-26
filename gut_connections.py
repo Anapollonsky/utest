@@ -1,7 +1,6 @@
-import utils as ut
+import gut_utils as ut
 import sys
 import pexpect
-import os
 
 class Conman:
     """Singleton class responsible for managing pexpect connections and different frame types."""
@@ -9,6 +8,7 @@ class Conman:
     
     def __init__(self, trace):
         self.trace_level = trace
+        self.updateterminal()
 
     ## Connection list        
     def ard546connect(address):
@@ -50,7 +50,7 @@ class Conman:
                 return connection
         conn = Conman.connfuncdict[interface](address)
         if conn:
-            ut.notify("message", "Connected to " + interface + " at " + address)
+            self.message("Connected to " + interface + " at " + address)
         conn.address = address
         conn.interface = interface
         if self.trace_level == 3:
@@ -61,7 +61,7 @@ class Conman:
     def sendframe(self, frame):
         """Transmit a frame object's message to intended recipient."""
         if frame.connection not in Conman.connections:
-            ut.notify("fe", "Frame connection to " + frame.connection.address + " over " + frame.connection.interface + " not found in the connection manager. Exiting.")
+            self.ferror("Frame connection to " + frame.connection.address + " over " + frame.connection.interface + " not found in the connection manager. Exiting.")
         else:
             connection = self.openconnection(frame.connection.interface, frame.connection.address)
             connection.sendline(frame.send["content"])
@@ -76,8 +76,48 @@ class Conman:
             connection.close()
             del connection
 
-    def updateterminal(self):
-        term_size = os.get_terminal_size
-        self.terminal.cols = term_size.columns
-        self.terminal.rows = term_size.lines  
+    ## Miscellaneous
+    def message(self, message):
+        print("" + message.strip())
+
+    def block(self, message):
+        print((" " + message.strip() + " ").center(40, "=").center(self.terminal["rows"], " "))
+
+    def hblock(self, message):
+        print((" " + message + " ").center(self.terminal["rows"], "="))
         
+    def ferror(self, message):
+        print((" " + "FATAL ERROR" + " ").center(self.terminal["rows"], "#"))
+        print(message.strip())
+        sys.exit()
+
+    def terror(self, message):
+        print(("  TEST ERROR  ").center(self.terminal["rows"], "#"))
+        if isinstance(message, str):
+            print(message[0].strip())
+        elif isinstance(message, list) and len(message) == 2:
+            print(("  Capture  ").center(self.terminal["rows"], "="))            
+            print(message[1].strip())        
+        sys.exit()
+        
+    # def notify(self, level, message): 
+    #     """Perform formatting of output based on level parameter."""
+    #     if level == "bas": # basic message
+    #         print("" + message.strip())
+    #     elif level == "not": # special notification
+    #         print("> " + message.strip())
+    #     elif level == "update": # special notification
+    #         print(">>> " + message.strip())        
+    #     elif level == "tf": # Test Failure
+    #         print("###" + message.strip() + "\n Exiting.###")
+    #         sys.exit()        
+    #     elif level == "fe": # fatal error
+    #         print("### " + message.strip() + "\n Exiting. ###")
+    #         sys.exit()
+
+    
+    def updateterminal(self):
+        self.terminal = {}
+        self.terminal["rows"], self.terminal["cols"] = ut.getTerminalSize()
+
+

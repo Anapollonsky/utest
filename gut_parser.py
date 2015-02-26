@@ -14,10 +14,9 @@ sym = {"sh": "shcommand",
        "reject":"reject",
        "expect_regex":"expect-regex",
        "expect":"expect",
-       "set_expect_timeout":"timeout",
-       "wait-after":"wait_after",
-       "wait-before":"wait_before",
-       "wait-time":"wait_time", 
+       "wait-_after":"wait-after",
+       "wait_before":"wait-before",
+       "wait_time":"wait-time",
        "var_in_dict":"dict",
        "send_variable_replace":"vars"}
 
