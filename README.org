@@ -1,1 +1,6 @@
- 
+* GUT Documentation
+** About
+GUT is a flexible testing platform, particularly well suited for testing inferior hardware over a telnet or ssh connection. GUT provides a flexible framework that allows for easy expansion by the user of existing functionality, while providing a simple, YAML-formatted syntax for running tests.
+
+Due to the architecture and technologies used in GUT, there are some limitations that are unlikely to be removed. The primary amoung these is the reliance of pexpect, the python module used to handle connections, on being run on a Linux-like system. As of the time of writing, GUT cannot thus natively run on windows without significant refactoring (though it may be possible through a Linux-like environment on windows, such as Cygwin or a Linux virtual machine).
+
