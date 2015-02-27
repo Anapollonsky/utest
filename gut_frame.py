@@ -1,5 +1,4 @@
 import time
-import pexpect
 import re
 import gut_utils as ut
 import gut_analyze as an

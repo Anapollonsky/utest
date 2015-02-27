@@ -1,6 +1,6 @@
 import time
 import re
-import pexpect
+import telnetlib
 import gut_utils as ut
 
 # Describe the default attributes of functions. Priority is excluded because a function without a defined priority cannot be run.
@@ -50,11 +50,10 @@ def expect(frame, array):
         captured_lines_local = [] 
         iter_time = time.time()
         temp_expect = list(diminishing_expect)
-        temp_expect.insert(0, pexpect.TIMEOUT)
-        i = frame.connection.expect(temp_expect, timeout=timer)
+        i = frame.connection.expect(temp_expect, timer)
         timer -= (time.time() - iter_time) # Subtract time it took to capture
-        capture = frame.connection.before + frame.connection.after
-        if i == 0:
+        capture = i[2]
+        if i[0] == -1:
             frame.conman.terror("Timeout while waiting for the following substrings:\n" + str(diminishing_expect) + ".")
         for k in diminishing_expect[:]:
             if re.search(k, capture):
@@ -73,12 +72,11 @@ def expect_regex(frame, array):
         captured_lines_local = [] 
         iter_time = time.time()
         temp_expect = list(diminishing_expect)
-        temp_expect.insert(0, pexpect.TIMEOUT)
-        i = frame.connection.expect(temp_expect, timeout=timer)
-        if i == 0:
+        i = frame.connection.expect(temp_expect, timer)
+        if i[0] == -1:
             frame.conman.terror( "Timeout while waiting for the following regexes:\n" + str(diminishing_expect) + ".")
         timer -= (time.time() - iter_time) # Subtract time it took to capture
-        capture = frame.connection.before + frame.connection.after            
+        capture = i[2]
         for k in diminishing_expect[:]:
             if re.search(k, capture):
                 captured_lines_local.append(k)

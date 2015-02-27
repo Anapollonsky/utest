@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import pexpect
 import re
 import time
 import sys
