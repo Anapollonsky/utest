@@ -18,7 +18,9 @@ sym = {"sh": "shcommand",
        "wait_before":"wait-before",
        "wait_time":"wait-time",
        "var_in_dict":"dict",
-       "send_variable_replace":"vars"}
+       "send_variable_replace":"vars",
+       "store_regex":"store-regex",
+       "check_regex":"check-regex"}
 
 def symbol_substitutions(input_string, symbols):
     """Perform substitutions in the string, replacing all 'values' from an external dictionary with the corresponding 'keys'."""

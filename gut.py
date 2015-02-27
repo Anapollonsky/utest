@@ -4,7 +4,6 @@ import re
 import time
 import sys
 import argparse
-# from collections import deque
 from copy import deepcopy
 
 import gut_parser as pa
@@ -40,11 +39,11 @@ def parse_block(block, global_config, command_queue, conman):
         ut.recursive_dict_merge(global_config, block["glo"])
     elif "inc" in block: # Inclusion of a file requested
         include_file(block["inc"], command_queue, conman)
-    elif any([x in block for x in Conman.conncommdict.values()]): # new frame being defined
-        for k in Conman.conncommdict:
-            if Conman.conncommdict[k] in block:
+    elif any([x in block for x in Conman.connfuncdict]): # new frame being defined
+        for k in Conman.connfuncdict:
+            if k in block:
                 interface = k
-        los = block[Conman.conncommdict[interface]]
+        los = block[interface]
         los["interface"] = interface
         ut.recursive_dict_merge(los, global_config)
         frame = Frame.frameFromLos(conman, los)

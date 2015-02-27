@@ -105,3 +105,42 @@ def send_variable_replace(frame, var_in_dict):
         outstr = re.sub(i, k, outstr)
     frame.send["content"] = outstr    
 send_variable_replace.priority = 1
+
+def store_regex(frame, regexes):
+    """Capture regexes in responses and store in the storage dictionary. Accepts lists and strings."""
+    if isinstance(regexes, list):
+        for regex in regexes:
+            match = re.search(regex, "".join(self.responses))
+            if match:
+                frame.conman.storage[regex] = match.groups()
+            else:
+                frame.conman.terror("Expected regex " + regex + "not present in captured frame.")                 
+    elif isinstance(regexes, str):
+        match = re.search(regexes, "".join(self.responses))
+        if match:
+            frame.conman.storage[regexes] = match.groups()
+        else:
+            frame.conman.terror("Expected regex " + regexes + "not present in captured frame.") 
+store_regex.priority = 10
+def check_regex(frame, regexes):
+    """Verify that the regexes extracted in the current frame match those stored with store_regex"""
+    if isinstance(regexes, list):
+        for regex in regexes:
+            match = re.search(regex, "".join(self.responses))
+            if match:
+                if not [x in frame.conman.storage[regex] for x in match.groups()]:
+                    frame.conman.terror("Mismatch between captured and stored data for regexes " + regexes + ".",
+                                        "Stored: " + str(frame.conman.storage[regex]) +
+                                        "\n Captured: " + str(match.groups))
+            else:
+                frame.conman.terror("Expected regex " + regexes + "not present in captured frame.")                 
+    elif isinstance(regexes, str):
+        match = re.search(regexes, "".join(self.responses))
+        if match:
+            if not (frame.conman.storage[regexes] == match.groups()):
+                frame.conman.terror("Mismatch between captured and stored data for regexes " + regexes + ".",
+                                    "Stored: " + str(frame.conman.storage[regex]) +
+                                    "\n Captured: " + str(match.groups))                
+        else:
+            frame.conman.terror("Expected regexes " + regexes + "not present in captured frame.") 
+check_regex.priority = 12
