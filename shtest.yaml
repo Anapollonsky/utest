@@ -1,0 +1,14 @@
+shcommand:
+  address: 135.112.98.30
+  send: echo lolwhat
+  expect-regex:
+    array:
+      - CLI_OK
+
+      
+shcommand:
+  send:
+    content: cd /log; ls; 
+  expect-regex:
+    array:
+      - launch

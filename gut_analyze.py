@@ -3,23 +3,25 @@ import re
 import telnetlib
 import gut_utils as ut
 
-# Describe the default attributes of functions. Priority is excluded because a function without a defined priority cannot be run.
+# Describe the default attributes of functions. These are used for all functions if not otherwise
+# explicitly set. Priority is excluded because a function without a defined priority cannot be run.
 default_func_attrs = {"defaults":{}, "quiet": False}
 
-
+################################################################################
+## Function definitions go below this line. Keep it neat.
 def timeout(frame, timeout):
     """Used to set the timeout variable, used by expect and expect_regex"""
     pass
 timeout.priority = 0
 
 def address(frame, address):
-    """Used to set the connection address. If unused, set by other things."""
+    """Used to set the connection address."""
     pass
 address.priority = 0
 address.quiet = True
 
-def interface(frame, address):
-    """Used to set the connection interface. If unused, set by other things."""
+def interface(frame, interface):
+    """Used to set the connection interface. """
     pass
 interface.priority = 0
 interface.quiet = True
@@ -98,49 +100,45 @@ def wait_before(frame, wait_time):
 wait_before.priority = 0
 wait_before.defaults = {"wait_time":.2}    
 
-def send_variable_replace(frame, var_in_dict):
-    """Replaces all instances of one word with another in all sent messages."""
-    outstr = str(frame.send["content"])
+def variable_replace(frame, var_in_dict):
+    """Replaces all instances of one word with another in all send, expect and reject blocks."""
     for i, k in var_in_dict.items():
-        outstr = re.sub(i, k, outstr)
-    frame.send["content"] = outstr    
-send_variable_replace.priority = 1
+        frame.send["content"] = re.sub(i, k, frame.send["content"])
+variable_replace.priority = 1
 
 def store_regex(frame, regexes):
     """Capture regexes in responses and store in the storage dictionary. Accepts lists and strings."""
+    def store_regex_single(frame, regex):
+        match = re.search(regex, "".join(frame.responses))
+        if match:
+            frame.conman.storage[regex] = match.groups()
+            frame.conman.message(1, "Regex \"" + regex + "\" captured: \"" + str(match.groups()) + "\"")
+        else:
+            frame.conman.terror("Expected regex \"" + regex + "\" not present in captured frame.")
     if isinstance(regexes, list):
         for regex in regexes:
-            match = re.search(regex, "".join(self.responses))
-            if match:
-                frame.conman.storage[regex] = match.groups()
-            else:
-                frame.conman.terror("Expected regex " + regex + "not present in captured frame.")                 
+            store_regex_single(frame, regex)
     elif isinstance(regexes, str):
-        match = re.search(regexes, "".join(self.responses))
-        if match:
-            frame.conman.storage[regexes] = match.groups()
-        else:
-            frame.conman.terror("Expected regex " + regexes + "not present in captured frame.") 
+        store_regex_single(frame, regexes)
 store_regex.priority = 10
+
 def check_regex(frame, regexes):
-    """Verify that the regexes extracted in the current frame match those stored with store_regex"""
+    """Verify that the regexes extracted in the current frame match those stored with store_regex.
+    Regexes stored and retrieved based purely on the regex that's used to capture them."""
+    def check_regex_single(frame, regex):
+        match = re.search(regex, "".join(frame.responses))
+        if match:
+            if not (frame.conman.storage[regex] == match.groups()):
+                frame.conman.terror("Mismatch between captured and stored data for regex " + regex + ".",
+                                    "Stored: " + str(frame.conman.storage[regex]) +
+                                    "\n Captured: " + str(match.groups))
+            else:
+                frame.conman.message(1, "Regex \"" + regex + "\" matches: \"" + str(match.groups()) + "\"")
+        else:
+            frame.conman.terror("Expected regex " + regex + "not present in captured frame.") 
     if isinstance(regexes, list):
         for regex in regexes:
-            match = re.search(regex, "".join(self.responses))
-            if match:
-                if not [x in frame.conman.storage[regex] for x in match.groups()]:
-                    frame.conman.terror("Mismatch between captured and stored data for regexes " + regexes + ".",
-                                        "Stored: " + str(frame.conman.storage[regex]) +
-                                        "\n Captured: " + str(match.groups))
-            else:
-                frame.conman.terror("Expected regex " + regexes + "not present in captured frame.")                 
-    elif isinstance(regexes, str):
-        match = re.search(regexes, "".join(self.responses))
-        if match:
-            if not (frame.conman.storage[regexes] == match.groups()):
-                frame.conman.terror("Mismatch between captured and stored data for regexes " + regexes + ".",
-                                    "Stored: " + str(frame.conman.storage[regex]) +
-                                    "\n Captured: " + str(match.groups))                
-        else:
-            frame.conman.terror("Expected regexes " + regexes + "not present in captured frame.") 
+            check_regex_single(frame, regex)
+    else:
+        check_regex_single(frame, regexes)
 check_regex.priority = 12

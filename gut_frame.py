@@ -22,7 +22,7 @@ class Frame:
         functions.sort(key=lambda x: x.priority)
         
         for func in functions:
-            # If the argument is a dictionary of arguments, match every value to a argument with the same name as the key of that value.
+            # The argument is a dictionary of arguments, match every value to an argument with the same name as the key of that value.
             func_args = dict(getattr(self, func.__name__))
             ut.recursive_dict_merge(func_args, func.defaults)
             func_arg_names = inspect.getargspec(func).args
@@ -58,7 +58,7 @@ class Frame:
                     # Add to frame object
                     setattr(frame, func.__name__, {inspect.getargspec(func)[0][1]: los[func.__name__]})
         frame.conman = conman
-        frame.connection = frame.conman.openconnection(los["interface"], los["address"]) 
+        frame.connection = frame.conman.openconnection(frame.interface["interface"], frame.address["address"]) 
         frame.conman.updateterminal() # Update the terminal on every frame sent. Not necessary, but performance isn't an issue right now.
 
         return frame

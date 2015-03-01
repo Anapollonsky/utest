@@ -1,0 +1,40 @@
+bcicommand:
+  send:
+    content: /oam/hwVersion
+  expect-regex:
+    - CLI_OK
+    - BoardType
+    - CPLD 
+  timeout: 7
+  reject:
+    array:
+      - "test"
+  store-regex:
+    - "FPGA Version: (.*), CPLD Version: (.{3})"
+    - "HwVersion: (.*) HwRef"
+
+bcicommand:
+  send:
+    content: /oam/hwVersion
+  expect-regex:
+    - CLI_OK
+    - BoardType
+    - CPLD 
+  timeout: 7
+  reject:
+    array:
+      - "test"
+  check-regex:
+    - "FPGA Version: (.*), CPLD Version: (.{3})"
+    - "HwVersion: (.*) HwRef"
+
+            
+bcicommand:
+  send:
+    content: /pltf/i2c/eeprom_filter/read 20 30
+  # expect-regex:
+  #   array:
+  #     - "00"
+  reject:
+    array:
+      - "aou"

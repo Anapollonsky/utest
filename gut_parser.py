@@ -18,7 +18,7 @@ sym = {"sh": "shcommand",
        "wait_before":"wait-before",
        "wait_time":"wait-time",
        "var_in_dict":"dict",
-       "send_variable_replace":"vars",
+       "variable_replace":"vars",
        "store_regex":"store-regex",
        "check_regex":"check-regex"}
 
