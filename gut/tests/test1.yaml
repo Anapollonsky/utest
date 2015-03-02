@@ -1,0 +1,10 @@
+global:
+  vars:
+    dict:
+      "lolwhat": "CLI_OK"
+      
+include: tests/bcitest.yaml
+
+include: tests/shtest.yaml
+
+include: tests/ard546test.yaml

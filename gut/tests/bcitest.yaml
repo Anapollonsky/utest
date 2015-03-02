@@ -1,4 +1,4 @@
-bcicommand:
+bci:
   send:
     content: /oam/hwVersion
   expect-regex:
@@ -13,7 +13,7 @@ bcicommand:
     - "FPGA Version: (.*), CPLD Version: (.{3})"
     - "HwVersion: (.*) HwRef"
 
-bcicommand:
+bci:
   send:
     content: /oam/hwVersion
   expect-regex:
@@ -29,7 +29,7 @@ bcicommand:
     - "HwVersion: (.*) HwRef"
 
             
-bcicommand:
+bci:
   send:
     content: /pltf/i2c/eeprom_filter/read 20 30
   # expect-regex:

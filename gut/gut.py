@@ -5,11 +5,11 @@ import sys
 import argparse
 from copy import deepcopy
 
-import gut_parser as pa
-import gut_utils as ut
-import gut_analyze as an
-from gut_conman import Conman
-from gut_frame import Frame
+import yaml_parser as pa
+import utils as ut
+import functions.functions as fu
+from conman import Conman
+from frame import Frame
 
 VERSION = 1 
 
@@ -25,32 +25,32 @@ parser.add_argument("--version", help="print out version and exit",
     
 def include_file(thefile, command_queue, conman):
     """Include the YAML commands defined in another file. Works recursively, commands added in-place."""
-    include_queue = pa.parse_yaml_file(thefile)
+    include_queue = pa.parse_yaml_file(thefile, conman)
     command_queue[0].insert(0, (include_queue, thefile))
         
 def parse_block(block, command_queue, conman):
     """Block-type dependent actions"""
     if "glo" in block: # Global settings being set
         ut.recursive_dict_merge(conman.glo, block["glo"])
-    elif "inc" in block: # Inclusion of a file requested
-        include_file(block["inc"], command_queue, conman)
-    elif any([x in block for x in Conman.connfuncdict]): # new frame being defined
-        for k in Conman.connfuncdict:
-            if k in block:
-                interface = k
-        los = block[interface]
-        los["interface"] = interface
+    elif "include" in block: # Inclusion of a file requested
+        include_file(block["include"], command_queue, conman)
+    elif any([x.interfacename in block for x in conman.interfaces]): # new frame being defined
+        for interface in conman.interfaces:
+            if interface.interfacename in block:
+                theinterface = getattr(interface, "interfacename")
+        los = block[theinterface]
+        los["interface"] = theinterface
         ut.recursive_dict_merge(los, conman.glo)
         frame = Frame.frameFromLos(conman, los)
-        frame.perform_actions()        
+        frame.perform_actions() 
  
 def assign_function_attributes(conman):
-    """Assign default attributes to all functions in gut_analyze.py"""
-    functions = [method for name, method in an.__dict__.iteritems() if (callable(method) and hasattr(method, "priority"))]
+    """Assign default attributes to all functions in functions.py"""
+    functions = [method for name, method in fu.__dict__.iteritems() if (callable(method) and hasattr(method, "priority"))]
     for func in functions:
-        for attr in an.default_func_attrs:
+        for attr in fu.default_func_attrs:
             if not hasattr(func, attr):
-                setattr(func, attr, an.default_func_attrs[attr])
+                setattr(func, attr, fu.default_func_attrs[attr])
 
 def parse_command_queue (conman, queue):
     """Parse a "queue" (list,str) containing blocks to be executed and filename."""
@@ -77,7 +77,7 @@ if __name__ == "__main__":
         if args.address is not None:
             conman.glo["address"] = args.address
             
-        command_queue = pa.parse_yaml_file(args.file)
+        command_queue = pa.parse_yaml_file(args.file, conman)
         parse_command_queue(conman, (command_queue, args.file))
 
         conman.message(4, "Iteration " + str(iteration) + " Completed")

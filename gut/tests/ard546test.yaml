@@ -1,0 +1,13 @@
+
+ard546:
+  send:
+    content: |
+      [
+      MESSAGE: TYPE=SET 
+      TRANSACTION: ID=1 
+      ALDDEVDATA: INDEX=1 ALDSUB=1 FIELDNUM=0X21 FIELDLENGTH=6 FIELDDATA=0X44454647,0X4849000
+      ]
+  expect-regex:
+    array:
+      - \[
+      - (?i)error      
