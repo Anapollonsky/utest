@@ -19,7 +19,7 @@ wait_after.defaults = {"wait_time":.2}
 def wait_before(frame, wait_time):
     """High-priority wait function"""
     time.sleep(wait_time)
-wait_before.priority = 0
+wait_before.priority = -1
 wait_before.defaults = {"wait_time":.2}    
 
 def wait_after_send(frame, wait_time):

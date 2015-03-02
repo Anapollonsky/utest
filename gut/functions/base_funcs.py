@@ -45,11 +45,13 @@ interface.quiet = True
 interface.required = True
 
 def send(frame, content):
+    """Send the frame."""
     frame.sendframe()
 send.priority = 4
 send.required = True
 
 def capture(frame):
+    """Capture some data."""
     frame.addresponse(frame.capturemessage())
 capture.priority = 7
 capture.required = True

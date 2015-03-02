@@ -34,7 +34,7 @@ def log(frame, filename):
     try:
         infile = open(filename, 'a')
     except IOError:
-        conman.ferror("Failed to open file " + thefile + " for logging.")
+        frame.conman.ferror("Failed to open file " + filename + " for logging.")
     infile.write(frame.send["content"] + "\n\n" + frame.responses + "\n\n")
     infile.close()
 log.priority = 100
