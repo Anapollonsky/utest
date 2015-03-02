@@ -1,4 +1,5 @@
 import telnetlib
+import time
 from frame import Frame
 
 class BCI_Frame(Frame):
@@ -24,8 +25,15 @@ class BCI_Frame(Frame):
         return connection
 
     def expectmessage(self, array, timer):
+        """Wait for a message from an array, return either a capture or a timeout."""
         results = self.connection.expect(array, timer)
         if results[0] == -1:
             return (None, True) # Return no capture, timeout
         else:
             return (results[2], False) # Return capture, no timeout
+
+    def capturemessage(self):
+        """Try to capture text without an "expect" clause."""
+        time.sleep(.1)
+        return self.connection.read_very_eager()
+        

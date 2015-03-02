@@ -27,7 +27,9 @@ class Conman:
         self.trace_level = trace
         self.updateterminal()
         self.storage = {}
+        self.global_permanent = {"capture": None, "connect": None}        
         self.interfaces = self.importinterfaces()
+        
         
     ## Connection Management    
     def openconnection(self, reqinterface, reqaddress, *extrargs):

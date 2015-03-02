@@ -5,20 +5,25 @@ def reject(frame, array):
     """Throw an error if any string in list-argument is present in given frame's responses."""
     for capture in frame.responses:
         if any([re.search(k, capture) for k in [re.escape(x) for x in array]]):
-            frame.conman.terror(["Captured rejected substring in response:" + k.strip(), "".join(frame.responses)])
+            frame.conman.terror(["Captured rejected substring in response:" + k.strip(), frame.responses])
 reject.priority = 8
 
 def reject_regex(frame, array):
     """Throw an error if any regex in list-argument is present in given frame's responses."""
     for capture in frame.responses:
         if any([re.search(k, capture) for k in array]):
-            frame.conman.terror(["Captured rejected regex substring in response:" + k.strip(), "".join(frame.responses)])
+            frame.conman.terror(["Captured rejected regex substring in response:" + k.strip(), frame.responses])
 reject_regex.priority = 8
 
 def expect(frame, array):
     """Try and capture everything in array before time runs out."""
     diminishing_expect = [re.escape(x) for x in array]
-    timer = frame.timeout["timeout"] if hasattr(frame, "timeout") else 10 
+    timer = frame.timeout["timeout"] if hasattr(frame, "timeout") else 10
+    if hasattr(frame, "responses"):
+        for k in diminishing_expect[:]:
+            if re.search(k, frame.responses): 
+                captured_lines_local.append(k)
+                diminishing_expect.remove(k)        
     while diminishing_expect:
         captured_lines_local = [] 
         iter_time = time.time()
@@ -35,12 +40,18 @@ def expect(frame, array):
         for k in captured_lines_local:
             frame.conman.message(1, "Captured in response: " + k.strip())
         frame.addresponse(capture)
+    frame.timeout = {"timeout": timer}        
 expect.priority = 6
 
 def expect_regex(frame, array):
     """Try and capture everything in array before time runs out."""
     diminishing_expect = array
-    timer = frame.timeout["timeout"] if hasattr(frame, "timeout") else 10     
+    timer = frame.timeout["timeout"] if hasattr(frame, "timeout") else 10
+    if hasattr(frame, "responses"):
+        for k in diminishing_expect[:]:
+            if re.search(k, frame.responses):
+                captured_lines_local.append(k)
+                diminishing_expect.remove(k)            
     while diminishing_expect:
         captured_lines_local = [] 
         iter_time = time.time()
@@ -57,13 +68,14 @@ def expect_regex(frame, array):
         for k in captured_lines_local:
             frame.conman.message(1, "Captured in response: " + k.strip())
         frame.addresponse(capture)
+    frame.timeout = {"timeout": timer}
 expect_regex.priority = 6
 
 
 def store_regex(frame, regexes):
     """Capture regexes in responses and store in the storage dictionary. Accepts lists and strings."""
     def store_regex_single(frame, regex):
-        match = re.search(regex, "".join(frame.responses))
+        match = re.search(regex, frame.responses)
         if match:
             frame.conman.storage[regex] = match.groups()
             frame.conman.message(1, "Regex \"" + regex + "\" captured: \"" + str(match.groups()) + "\"")
@@ -80,7 +92,7 @@ def check_regex(frame, regexes):
     """Verify that the regexes extracted in the current frame match those stored with store_regex.
     Regexes stored and retrieved based purely on the regex that's used to capture them."""
     def check_regex_single(frame, regex):
-        match = re.search(regex, "".join(frame.responses))
+        match = re.search(regex, frame.responses)
         if match:
             if not (frame.conman.storage[regex] == match.groups()):
                 frame.conman.terror("Mismatch between captured and stored data for regex " + regex + ".",
@@ -89,7 +101,8 @@ def check_regex(frame, regexes):
             else:
                 frame.conman.message(1, "Regex \"" + regex + "\" matches: \"" + str(match.groups()) + "\"")
         else:
-            frame.conman.terror("Expected regex " + regex + "not present in captured frame.") 
+            print (frame.responses)
+            frame.conman.terror("Expected regex " + regex + " not present in captured frame.") 
     if isinstance(regexes, list):
         for regex in regexes:
             check_regex_single(frame, regex)

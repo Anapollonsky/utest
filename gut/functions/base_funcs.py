@@ -1,9 +1,11 @@
+import time
+
 def timeout(frame, timeout):
     """Used to set the timeout variable, used by expect and expect_regex"""
     pass
 timeout.priority = 0
 
-def connect(frame, empty):
+def connect(frame):
     """Used to initiate the connection."""
     extrargs = []
     if hasattr(frame, "username"):
@@ -44,3 +46,6 @@ def send(frame, content):
     frame.sendframe()
 send.priority = 4
 
+def capture(frame):
+    frame.addresponse(frame.capturemessage())
+capture.priority = 7

@@ -1,6 +1,7 @@
 ## Import functions from external files here.
 from base_funcs import *
 from regex_funcs import *
+from util_funcs import *
 
 # Describe the default attributes of functions. These are used for all functions if not otherwise
 # explicitly set. Priority is excluded because a function without a defined priority cannot be run.
@@ -21,15 +22,8 @@ def wait_before(frame, wait_time):
 wait_before.priority = 0
 wait_before.defaults = {"wait_time":.2}    
 
-def variable_replace(frame, var_in_dict):
-    """Replaces all instances of one word with another in all send, expect and reject blocks."""
-    for i, k in var_in_dict.items():
-        if hasattr(frame, "send"):
-            frame.send["content"] = re.sub(i, k, frame.send["content"])
-        if hasattr(frame, "expect"):
-            for member in frame.expect["array"]: 
-                member = re.sub(i, k, member)
-        if hasattr(frame, "expect_regex"):
-            for member in frame.expect_regex["array"]:
-                member = re.sub(i, k, member)        
-variable_replace.priority = 1
+def wait_after_send(frame, wait_time):
+    """High-priority wait function that waits right after sending the command"""
+    time.sleep(wait_time)
+wait_after_send.priority = 5
+wait_after_send.defaults = {"wait_time":.2}

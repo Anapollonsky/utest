@@ -1,14 +1,9 @@
-sh:
-  address: 135.112.98.30
-  send: echo lolwhat
-  expect-regex:
-    array:
-      - CLI_OK
-
-      
-sh:
+global:
+  interface: sh
+  
+cmd:
   send:
     content: cd /log; ls; 
-  expect-regex:
+  expect_regex:
     array:
       - launch

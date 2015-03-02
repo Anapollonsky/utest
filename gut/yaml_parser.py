@@ -7,13 +7,6 @@ from frame import Frame
 sym = {
        "glo":"global",
        "var":"variables",
-       "reject_regex":"reject-regex",
-       "reject":"reject",
-       "expect_regex":"expect-regex",
-       "expect":"expect",
-       "wait-_after":"wait-after",
-       "wait_before":"wait-before",
-       "wait_time":"wait-time",
        "var_in_dict":"dict",
        "variable_replace":"vars",
        "store_regex":"store-regex",

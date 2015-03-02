@@ -1,5 +1,7 @@
-
-ard546:
+global:
+  interface: ard546
+  
+cmd:
   send:
     content: |
       [
@@ -7,7 +9,7 @@ ard546:
       TRANSACTION: ID=1 
       ALDDEVDATA: INDEX=1 ALDSUB=1 FIELDNUM=0X21 FIELDLENGTH=6 FIELDDATA=0X44454647,0X4849000
       ]
-  expect-regex:
+  expect_regex:
     array:
       - \[
       - (?i)error      

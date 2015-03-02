@@ -9,6 +9,7 @@ import utils as ut
 import functions.functions as fu
 from conman import Conman
 from frame import Frame
+from copy import deepcopy
 
 VERSION = 1 
 
@@ -22,26 +23,32 @@ parser.add_argument("-l", "--log", help="set output log filename", default = Non
 parser.add_argument("--version", help="print out version and exit",
                     action='version', version='%(prog)s ' + str(VERSION))
     
-def include_file(thefile, command_queue, conman):
+def parse_include(thefile, command_queue, conman):
     """Include the YAML commands defined in another file. Works recursively, commands added in-place."""
     include_queue = pa.parse_yaml_file(thefile, conman)
     command_queue[0].insert(0, (include_queue, thefile))
-        
+
+def parse_global(settings, conman):
+    """Generate new global_temporary settings from global_permanent settings and new "global" block"""
+    conman.global_temporary = deepcopy(conman.global_permanent)
+    ut.recursive_dict_merge(conman.global_temporary, settings)
+
+def parse_command(local_settings, conman):
+    """Generate new local settings from global_temporary settings and new "cmd" block. Perform command actions."""
+    ut.recursive_dict_merge(local_settings, conman.global_temporary)
+    frame = Frame.frameFromLocalSettings(conman, local_settings)
+    frame.perform_actions()
+    
 def parse_block(block, command_queue, conman):
-    """Block-type dependent actions"""
+    """Delegate actions based on top-level block type."""
     if "glo" in block: # Global settings being set
-        ut.recursive_dict_merge(conman.glo, block["glo"])
+        parse_global(block["glo"], conman)
     elif "include" in block: # Inclusion of a file requested
-        include_file(block["include"], command_queue, conman)
-    elif any([x.interfacename in block for x in conman.interfaces]): # new frame being defined
-        for interface in conman.interfaces:
-            if interface.interfacename in block:
-                theinterface = getattr(interface, "interfacename")
-        los = block[theinterface]
-        los["interface"] = theinterface
-        ut.recursive_dict_merge(los, conman.glo)
-        frame = Frame.frameFromLos(conman, los)
-        frame.perform_actions() 
+        parse_include(block["include"], command_queue, conman)
+    elif "cmd" in block: # new frame being defined
+        parse_command(block["cmd"], conman)
+    else:
+        conman.ferror("Unexpected top-level name \"" + block.keys()[0] + "\" encountered.")
  
 def assign_function_attributes(conman):
     """Assign default attributes to all functions in functions.py"""
@@ -52,7 +59,7 @@ def assign_function_attributes(conman):
                 setattr(func, attr, fu.default_func_attrs[attr])
 
 def parse_command_queue (conman, queue):
-    """Parse a "queue" (list,str) containing blocks to be executed and filename."""
+    """Parse a "queue" (list,str) containing blocks to be executed and filename. Works recursively, on nested 'queues'."""
     conman.message(3, "Entering \"" + queue[1] + "\"")
     while queue[0]:
         block = queue[0][0]
@@ -64,21 +71,17 @@ def parse_command_queue (conman, queue):
     conman.message(3, "Leaving \"" + queue[1] + "\"")    
     
 if __name__ == "__main__":
-    args = parser.parse_args() 
+    args = parser.parse_args()
     conman = Conman(args.verbose)
-    conman.log = args.log
     assign_function_attributes(conman)
-
+    if args.address is not None:
+        conman.global_permanent["address"] = args.address
+            
     iteration = 1
     while(iteration <= args.repeat):
         conman.message(4, "Beginning Iteration " + str(iteration) + " of " + str(args.repeat) + "...") 
-        conman.glo = {}
-        if args.address is not None:
-            conman.glo["address"] = args.address
-            
         command_queue = pa.parse_yaml_file(args.file, conman)
         parse_command_queue(conman, (command_queue, args.file))
-
         conman.message(4, "Iteration " + str(iteration) + " Completed")
         iteration += 1
         
