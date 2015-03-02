@@ -5,7 +5,7 @@ from util_funcs import *
 
 # Describe the default attributes of functions. These are used for all functions if not otherwise
 # explicitly set. Priority is excluded because a function without a defined priority cannot be run.
-default_func_attrs = {"defaults":{}, "quiet": False}
+default_func_attrs = {"defaults":{}, "quiet": False, "required": False}
 
 ################################################################################
 ## Function definitions go below this line. Keep it neat.

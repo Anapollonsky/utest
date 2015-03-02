@@ -1,3 +1,0 @@
-shcommand:
-  send: cd /boo
-  expect: oh momma

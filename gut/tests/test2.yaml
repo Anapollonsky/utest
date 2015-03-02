@@ -1,0 +1,11 @@
+global:
+  username: lucent
+  password: notpassword
+  interface: sh
+
+cmd:
+  send: pwd
+  wait_after_send: .5
+  log: logs/test2log
+  print_response:
+  

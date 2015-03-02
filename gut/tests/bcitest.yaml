@@ -1,7 +1,7 @@
 global:
   interface: bci
   print_time:
-  log: testlog.log
+  log: logs/testlog.log
   
 cmd:
   send:
