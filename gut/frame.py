@@ -34,6 +34,7 @@ class Frame:
     def frameFromLos(conman, los):
         """Generate a frame from a dictionary of local settings."""
         conman.message(3, "Sending " + los["interface"] + " frame")
+        los["connect"] = "test"
         for interface in conman.interfaces:
             if interface.interfacename == los["interface"]:
                 frame = interface()
@@ -60,7 +61,6 @@ class Frame:
                     # Add to frame object
                     setattr(frame, func.__name__, {inspect.getargspec(func)[0][1]: los[func.__name__]})
         frame.conman = conman
-        frame.connection = frame.conman.openconnection(frame.interface["interface"], frame.address["address"]) 
         frame.conman.updateterminal() # Update the terminal on every frame sent. Not necessary, but performance isn't an issue right now.
 
         return frame

@@ -3,11 +3,36 @@ def timeout(frame, timeout):
     pass
 timeout.priority = 0
 
+def connect(frame, empty):
+    """Used to initiate the connection."""
+    extrargs = []
+    if hasattr(frame, "username"):
+        extrargs.append(frame.username["username"])
+    if hasattr(frame, "password"):
+        extrargs.append(frame.password["password"])
+    frame.connection = frame.conman.openconnection(frame.interface["interface"], frame.address["address"], *extrargs)     
+connect.priority = 1
+connect.quiet = True
+
+def username(frame, username):
+    """Used to set the connection username, if any."""
+    pass
+username.priority = 0
+username.quiet = True
+
+
+def password(frame, password):
+    """Used to set the connection password, if any."""
+    pass
+password.priority = 0
+password.quiet = True
+
 def address(frame, address):
     """Used to set the connection address."""
     pass
 address.priority = 0
 address.quiet = True
+
 
 def interface(frame, interface):
     """Used to set the connection interface. """

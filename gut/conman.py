@@ -30,14 +30,14 @@ class Conman:
         self.interfaces = self.importinterfaces()
         
     ## Connection Management    
-    def openconnection(self, reqinterface, reqaddress):
+    def openconnection(self, reqinterface, reqaddress, *extrargs):
         """Open a connection to target and return, or return existing connection."""
         for connection in self.connections: # Check if connection exists
             if connection.address == reqaddress and connection.interface == reqinterface:
                 return connection
         for interface in self.interfaces: # Check if the interface exists, and if it does, use it to connect
             if hasattr(interface, "interfacename") and interface.interfacename == reqinterface:
-                conn = interface.connect(reqaddress)
+                conn = interface.connect(reqaddress, *extrargs)
         if conn == None:
             self.ferror("Unable to establish a connection to " + reqaddress + " via " + reqinterface + ".")
         if conn:

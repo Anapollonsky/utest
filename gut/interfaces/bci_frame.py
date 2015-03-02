@@ -5,16 +5,16 @@ class BCI_Frame(Frame):
     interfacename = "bci"
     
     @staticmethod            
-    def connect(address):
+    def connect(address, username="lucent", password="password"):
         """ Connection procedure for bci."""
         try:
             con = telnetlib.Telnet(address, 7006, 10)
         except socket.timeout:
             return None
         con.expect(["ogin"])
-        con.write("lucent\n")
+        con.write(username + "\n")
         con.expect(["assword"])
-        con.write("password\n")
+        con.write(password + "password\n")
         return con
 
     def sendframe(self):

@@ -3,7 +3,6 @@ import re
 import time
 import sys
 import argparse
-from copy import deepcopy
 
 import yaml_parser as pa
 import utils as ut
