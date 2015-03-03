@@ -1,8 +1,8 @@
 from time import gmtime, strftime
 
-def variable_replace(frame, variables):
+def variable_replace(frame, var_def):
     """Replaces all instances of one word with another in all send, expect and reject blocks."""
-    for i, k in variables.items():
+    for i, k in var_defs.items():
         if hasattr(frame, "send"):
             frame.send["content"] = re.sub(i, k, frame.send["content"])
         if hasattr(frame, "expect"):

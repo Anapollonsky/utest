@@ -1,26 +1,27 @@
 import time
 import telnetlib
+import socket
 from frame import Frame
 
-class SH_Frame(Frame):
-    interfacename = "sh"    
+class telnet_Frame(Frame):
+    interfacename = "telnet"    
 
-    @staticmethod    
-    def connect(address, username="lucent", password="password"):
+    def establishConnection(self, address, username, password):
         """ Connection procedure for remote shell."""
         try:
             con = telnetlib.Telnet(address, 23, 10)
         except socket.timeout:
-            return None        
+            return None
         con.expect(["ogin"])
         con.write(username + "\n")
         con.expect(["assword"])
         con.write(password + "\n")
+        time.sleep(.2)
         return con
 
     def sendframe(self):
         """Transmit a frame object's content to intended recipient."""
-        connection = self.conman.openconnection(self.interface["interface"], self.address["address"])
+        connection = self.conman.openconnection(self)
         connection.write(self.send["content"] + "\n")
         return connection
 
@@ -34,5 +35,5 @@ class SH_Frame(Frame):
 
     def capturemessage(self):
         """Try to capture text without an "expect" clause."""
-        time.sleep(.1)
+        time.sleep(.4)
         return self.connection.read_very_eager()

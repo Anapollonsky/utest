@@ -1,7 +1,6 @@
 import os
 import glob
 import sys
-import socket
 import inspect
 from frame import Frame
 import utils as ut
@@ -32,22 +31,49 @@ class Conman:
         
         
     ## Connection Management    
-    def openconnection(self, reqinterface, reqaddress, *extrargs):
+    def openconnection(self, frame):
         """Open a connection to target and return, or return existing connection."""
-        for connection in self.connections: # Check if connection exists
-            if connection.address == reqaddress and connection.interface == reqinterface:
+        # Get list of arguments, excluding 'self'.
+        connect_args = inspect.getargspec(frame.establishConnection).args[1:]
+
+        # Verify that all expected arguments are present
+        for arg in connect_args + ["interface"]:
+            if not hasattr(frame, arg):
+                self.ferror("Expected connection argument \"" + arg + "\" not set.")                
+                
+            
+        # If the connection with identical connection specifications exists, return it.
+        for connection in self.connections: 
+            connection_exists = True            
+            for arg in connect_args + ["interface"]:
+                if not ((arg in connection.args) and getattr(frame, arg)[arg] == connection.args[arg]):
+                    connection_exists = False
+            if connection_exists:
                 return connection
-        for interface in self.interfaces: # Check if the interface exists, and if it does, use it to connect
-            if hasattr(interface, "interfacename") and interface.interfacename == reqinterface:
-                conn = interface.connect(reqaddress, *extrargs)
+            
+        # Populate dictionary to insert as arguments to connection function
+        arg_dict = {}        
+        for arg in connect_args:
+            if hasattr(frame, arg):                    
+                arg_dict[arg] = getattr(frame, arg)[arg]
+
+         # Check if the interface exists, and if it does, use it to connect
+        connection_found = False
+        for interface in self.interfaces:
+            if hasattr(interface, "interfacename") and interface.interfacename == frame.interface["interface"]:
+                conn = frame.establishConnection(**arg_dict)
+                connection_found = True
+                break
+        if not connection_found:
+            self.ferror("Unable to find interface \"" + frame.interface["interface"] + "\"")
         if conn == None:
-            self.ferror("Unable to establish a connection to " + reqaddress + " via " + reqinterface + ".")
-        if conn:
-            self.message(2, "Connected to " + reqinterface + " at " + reqaddress)
-        conn.address = reqaddress
-        conn.interface = reqinterface
-        self.connections.append(conn)
-        return conn
+            self.ferror("Unable to establish a connection to interface \"" + frame.interface["interface"] + "\" with arguments " + str(arg_dict))
+        else: 
+            self.message(2, "Connected with interface \"" + frame.interface["interface"] + "\"")
+            conn.args = arg_dict
+            conn.args["interface"] = frame.interface["interface"]
+            self.connections.append(conn)
+            return conn
 
     def closeconnection(self, connection):
         """ Close a connection """
@@ -94,6 +120,7 @@ class Conman:
         if isinstance(content, str):
             print(content.strip())
         elif isinstance(content, list) and len(content) == 2:
+            print(content[0].strip())
             print(("  Capture  ").center(self.terminal["rows"], "="))            
             print(content[1].strip())        
         sys.exit()

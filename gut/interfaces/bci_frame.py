@@ -1,12 +1,12 @@
 import telnetlib
+import socket
 import time
 from frame import Frame
 
 class BCI_Frame(Frame):
     interfacename = "bci"
     
-    @staticmethod            
-    def connect(address, username="lucent", password="password"):
+    def establishConnection(self, address, username, password):
         """ Connection procedure for bci."""
         try:
             con = telnetlib.Telnet(address, 7006, 10)
@@ -16,11 +16,13 @@ class BCI_Frame(Frame):
         con.write(username + "\n")
         con.expect(["assword"])
         con.write(password + "password\n")
+        time.sleep(.2) 
+        con.expect([">"])
         return con
 
     def sendframe(self):
         """Transmit a frame object's content to intended recipient."""
-        connection = self.conman.openconnection(self.interface["interface"], self.address["address"])
+        connection = self.conman.openconnection(self)
         connection.write(self.send["content"] + "\n")
         return connection
 
@@ -34,6 +36,6 @@ class BCI_Frame(Frame):
 
     def capturemessage(self):
         """Try to capture text without an "expect" clause."""
-        time.sleep(.1)
+        time.sleep(.4)
         return self.connection.read_very_eager()
         

@@ -13,7 +13,7 @@ default_func_attrs = {"defaults":{}, "quiet": False, "required": False}
 def wait_after(frame, wait_time):
     """Low-priority wait function"""
     time.sleep(wait_time)
-wait_after.priority = 100
+wait_after.priority = 101
 wait_after.defaults = {"wait_time":.2}
 
 def wait_before(frame, wait_time):

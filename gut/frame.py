@@ -14,8 +14,7 @@ class Frame:
         self.responses = self.responses + response
         
     def perform_actions(self):
-        """Will go through all of the properties of a frame, match them up against available functions, and
-        run them with the proper arguments in the order as determined by the functions' priority"""
+        """Will go through all of the properties of a frame, match them up against available functions, and run them with the proper arguments in the order as determined by the functions' priority"""
         # Look through available functions, check if they're referenced on the frame object, and put those that are on a list.
         functions = [method for name, method in fu.__dict__.iteritems() if (callable(method) and hasattr(method, "priority") and hasattr(self, method.__name__))]
         # Sort by priority in ascending order
@@ -28,7 +27,8 @@ class Frame:
             else:
                 func_args = {}
             ut.recursive_dict_merge(func_args, func.defaults)
-            func_arg_names = inspect.getargspec(func).args
+            # func_arg_names = inspect.getargspec(func).args
+            
             if (func.quiet == False): 
                 self.conman.message(2, "Running " + func.__name__)
             func(self, **func_args)

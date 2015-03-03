@@ -1,21 +1,23 @@
 import time
 import telnetlib
+import socket
 from frame import Frame
 
 class ARD546_Frame(Frame):
     interfacename = "ard546"    
 
-    @staticmethod        
-    def connect(address):
+    def establishConnection(self, address):
         """ Connection procedure for ard546."""
         try:
-            return telnetlib.Telnet(address, 1307, 10)
+            con = telnetlib.Telnet(address, 1307, 10)
         except socket.timeout:
             return None
+        time.sleep(.2)
+        return con
 
     def sendframe(self):
         """Transmit a frame object's content to intended recipient."""
-        connection = self.conman.openconnection(self.interface["interface"], self.address["address"])
+        connection = self.conman.openconnection(self)
         connection.write(self.send["content"] + "\n")
         return connection
 
@@ -29,6 +31,6 @@ class ARD546_Frame(Frame):
 
     def capturemessage(self):
         """Try to capture text without an "expect" clause."""
-        time.sleep(.1)
+        time.sleep(.4)
         return self.connection.read_very_eager()
         
