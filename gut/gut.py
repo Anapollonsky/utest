@@ -81,6 +81,7 @@ if __name__ == "__main__":
         instream = open(args.file)
     elif not sys.stdin.isatty():
         instream = sys.stdin
+        print instream
     else:
         conman.ferror("No input stream found.")
     command_queue_base = pa.parse_yaml(instream, conman)        
@@ -90,7 +91,7 @@ if __name__ == "__main__":
         conman.global_permanent["address"] = args.address
     if args.log:
         conman.global_permanent["log"] = args.log
-            
+             
     iteration = 1
     while(iteration <= args.repeat):
         conman.message(4, "Beginning Iteration " + str(iteration) + " of " + str(args.repeat) + "...") 

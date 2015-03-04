@@ -17,9 +17,7 @@ class ARD546_Frame(Frame):
 
     def sendframe(self):
         """Transmit a frame object's content to intended recipient."""
-        connection = self.conman.openconnection(self)
-        connection.write(self.send["content"] + "\n")
-        return connection
+        self.connection.write(self.send["content"] + "\n")
 
     def expectmessage(self, array, timer):
         """Wait for a message from an array, return either a capture or a timeout."""                
@@ -27,7 +25,7 @@ class ARD546_Frame(Frame):
         if results[0] == -1:
             return (None, True) # Return no capture, timeout
         else:
-            return (results[2], False) # Return capture, no timeout
+            return (results[2], False) # Return capture, no timeout        
 
     def capturemessage(self):
         """Try to capture text without an "expect" clause."""

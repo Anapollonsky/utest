@@ -22,9 +22,7 @@ class BCI_Frame(Frame):
 
     def sendframe(self):
         """Transmit a frame object's content to intended recipient."""
-        connection = self.conman.openconnection(self)
-        connection.write(self.send["content"] + "\n")
-        return connection
+        self.connection.write(self.send["content"] + "\n")
 
     def expectmessage(self, array, timer):
         """Wait for a message from an array, return either a capture or a timeout."""

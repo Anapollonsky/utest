@@ -18,7 +18,6 @@ def username(frame, username):
 username.priority = 0
 username.quiet = True
 
-
 def password(frame, password):
     """Used to set the connection password, if any."""
     pass
@@ -39,6 +38,12 @@ interface.priority = 0
 interface.quiet = True
 interface.required = True
 
+# def shell(frame, shell):
+#     """Used to set the connection username, if any."""
+#     pass
+# shell.priority = 0
+# shell.quiet = True
+
 def send(frame, content):
     """Send the frame."""
     frame.sendframe()
@@ -47,7 +52,8 @@ send.required = True
 
 def capture(frame):
     """Capture some data."""
-    frame.addresponse(frame.capturemessage())
+    test = frame.capturemessage()
+    frame.addresponse(test)
 capture.priority = 7
 capture.required = True
 capture.quiet = True

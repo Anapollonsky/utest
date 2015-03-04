@@ -19,7 +19,6 @@ class Frame:
         functions = [method for name, method in fu.__dict__.iteritems() if (callable(method) and hasattr(method, "priority") and hasattr(self, method.__name__))]
         # Sort by priority in ascending order
         functions.sort(key=lambda x: x.priority)
-        
         for func in functions:
             # The argument is a dictionary of arguments, match every value to an argument with the same name as the key of that value.
             if getattr(self, func.__name__) != None:
@@ -32,6 +31,7 @@ class Frame:
             if (func.quiet == False): 
                 self.conman.message(2, "Running " + func.__name__)
             func(self, **func_args)
+            
 
     @staticmethod
     def frameFromLocalSettings(conman, local_settings):

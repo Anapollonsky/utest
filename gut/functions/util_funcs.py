@@ -29,6 +29,13 @@ def print_response(frame):
     frame.conman.message(1, "\n" + frame.responses + "\n")
 print_response.priority = 100    
 
+
+def print_send(frame):
+    """Low-priority function that prints the sent message."""
+    frame.conman.message(1, "\n" + frame.send["content"] + "\n")
+print_send.priority = 100    
+
+
 def log(frame, filename):
     """Low-priority function to log the sent and received messages to a given file."""
     try:
