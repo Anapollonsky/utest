@@ -12,8 +12,10 @@ class Conman:
         """Import valid interfaces from gutdir/interfaces"""
         sys.path.append('interfaces')        
         interfaces = []
+        # print os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) + "/interfaces/")
         for file in glob.glob(os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) + "/interfaces/", "*.py")):
             filename = os.path.splitext(os.path.basename(file))[0]
+            # print filename
             module = __import__(filename)
             for name, obj in inspect.getmembers(module):
                 if inspect.isclass(obj) and hasattr(obj, "interfacename"):
