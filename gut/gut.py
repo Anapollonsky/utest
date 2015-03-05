@@ -64,13 +64,13 @@ def parse_block(block, command_queue, conman):
     else:
         conman.ferror("Unexpected top-level name \"" + block.keys()[0] + "\" encountered.")
  
-def assign_function_attributes(conman):
+def assign_function_attributes(Frame, conman):
     """Assign default attributes to all functions in functions.py"""
-    functions = [method for name, method in fu.__dict__.items() if (callable(method) and hasattr(method, "priority"))]
+    functions = [method for name, method in Frame.__dict__.items() if (callable(method) and hasattr(method, "priority"))]
     for func in functions:
-        for attr in fu.default_func_attrs:
+        for attr in Frame.default_func_attrs:
             if not hasattr(func, attr):
-                setattr(func, attr, fu.default_func_attrs[attr])
+                setattr(func, attr, Frame.default_func_attrs[attr])
 
 def parse_command_queue (conman, queue):
     """Parse a "queue" (list,str) containing blocks to be executed and filename. Works recursively, on nested 'queues'."""
@@ -95,7 +95,7 @@ if __name__ == "__main__":
         conman.ferror("No input stream found.")
     command_queue_base = pa.parse_yaml(instream, conman)        
 
-    assign_function_attributes(conman)
+    assign_function_attributes(Frame, conman)
     if args.address:
         conman.global_permanent["address"] = args.address
     if args.log:

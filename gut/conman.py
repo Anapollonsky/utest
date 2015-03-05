@@ -62,18 +62,18 @@ class Conman:
          # Check if the interface exists, and if it does, use it to connect
         connection_found = False
         for interface in self.interfaces:
-            if hasattr(interface, "interfacename") and interface.interfacename == frame.interface["interface"]:
+            if hasattr(interface, "interfacename") and interface.interfacename == frame._interface["interface"]:
                 conn = frame.establishConnection(**arg_dict)
                 connection_found = True
                 break
         if not connection_found:
-            self.ferror("Unable to find interface \"" + frame.interface["interface"] + "\"")
+            self.ferror("Unable to find interface \"" + frame._interface["interface"] + "\"")
         if conn == None:
-            self.ferror("Unable to establish a connection to interface \"" + frame.interface["interface"] + "\" with arguments " + str(arg_dict))
+            self.ferror("Unable to establish a connection to interface \"" + frame._interface["interface"] + "\" with arguments " + str(arg_dict))
         else: 
-            self.message(2, "Connected with interface \"" + frame.interface["interface"] + "\"")
+            self.message(2, "Connected with interface \"" + frame._interface["interface"] + "\"")
             conn.args = arg_dict
-            conn.args["interface"] = frame.interface["interface"]
+            conn.args["interface"] = frame._interface["interface"]
             self.connections.append(conn)
             return conn
 

@@ -17,7 +17,7 @@ class sh_Frame(Frame):
 
     def sendframe(self):
         """Transmit a frame object's content to intended recipient."""
-        self.connection.sendline(self.send["content"])
+        self.connection.sendline(self._send["content"])
         self.connection.expect([">", pexpect.TIMEOUT], timeout=1)        
 
 
