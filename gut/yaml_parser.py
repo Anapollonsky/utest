@@ -6,7 +6,6 @@ from frame import Frame
 # Symbol table. Used to map yaml-file names to internal names, when necessary
 sym = {
        "var_def":"dict",
-       "variable_replace":"vars",
 }
 
 def symbol_substitutions(input_string, symbols):

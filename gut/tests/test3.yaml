@@ -47,6 +47,8 @@
 
 global:
   interface: shell
+  vars:
+    cd: ls
 cmd:
   send: ls; cd /; ls;
   print_response:
