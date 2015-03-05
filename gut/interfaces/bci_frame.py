@@ -2,6 +2,7 @@ import telnetlib
 import socket
 import time
 from frame import Frame
+from decorators import command
 
 class BCI_Frame(Frame):
     interfacename = "bci"
@@ -40,23 +41,17 @@ class BCI_Frame(Frame):
 
 ################################################################################
 #################### Command functions
-
+    @command(0)
     def username(self, username):
         """Used to set the connection username, if any."""
         self._username = username        
-    username.priority = 0
-    username.quiet = True
 
+    @command(0)
     def password(self, password):
         """Used to set the connection password, if any."""
         self._password = password
-    password.priority = 0
-    password.quiet = True
-
+    @command(0)
     def address(self, address):
         """Used to set the connection address."""
         self._address = address
-    address.priority = 0
-    address.quiet = True
-    address.required = False
     

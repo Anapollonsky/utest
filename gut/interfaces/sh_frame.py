@@ -1,6 +1,7 @@
 import pexpect
 import time
 from frame import Frame
+from decorators import command
 
 class sh_Frame(Frame):
     interfacename = "shell"    
@@ -41,10 +42,8 @@ class sh_Frame(Frame):
 
 ################################################################################
 #################### Command functions
-
+    @command(0)
     def shell(self, shell = 'sh'):
         """Used to set the shell, if any."""
         self._shell = shell
-    shell.priority = 0
-    shell.quiet = True
     

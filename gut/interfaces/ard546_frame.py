@@ -2,6 +2,7 @@ import time
 import telnetlib
 import socket
 from frame import Frame
+from decorators import command
 
 class ARD546_Frame(Frame):
     interfacename = "ard546"    
@@ -35,10 +36,8 @@ class ARD546_Frame(Frame):
 ################################################################################
 #################### Command functions
 
+    @command(0)
     def address(self, address):
         """Used to set the connection address."""
         self._address = address
-    address.priority = 0
-    address.quiet = True
-    address.required = False
 

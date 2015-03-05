@@ -4,7 +4,8 @@ import types
 import re
 import inspect
 import utils as ut
- 
+from decorators import command
+
 class Frame(object):
     """Representation of a sent/received frame."""
 
@@ -18,6 +19,7 @@ class Frame(object):
             """Verify that all the functions specified in local_settings can be found."""
             for func_string in local_settings:
                 if func_string not in [func.__name__ for func in functions]:
+                    print(functions)
                     conman.ferror("Unexpected function specified: \"" + func_string + "\"")
                     
         def handle_parametric_entry(local_settings, func, conman, argspec):
@@ -139,53 +141,48 @@ class Frame(object):
 ################################################################################
 #################### Callable functions
 
+    @command(0, [hook_show_args])
     def interface(self, interface):
         """Used to set the connection interface. """
         self._interface = interface
         pass
-    interface.priority = 0
-    interface.hooks = [hook_show_args]
 
+    @command(4, [hook_var_replace, hook_show_args])
     def send(self, content):
         """Send the frame."""
         self._send = content
         self.send_frame()
-    send.priority = 4
-    send.hooks = [hook_var_replace, hook_show_args]
- 
+
+    @command(0)
     def show_args(self):
         self._show_args = True
-    show_args.priority = 0
 
+    @command(7, [hook_show_args])
     def capture(self):
         """Capture some data."""
         self._response += self.capture_message()
         # self.insertFunctionWithPriority(self.capture, self.print_response)
-    capture.priority = 7
-    capture.hooks = [hook_show_args]
 
+    @command(1)
     def connect(self):
         """Used to initiate the connection."""
         self._connection = self.conman.openconnection(self) 
-    connect.priority = 1
 
+    @command(100)
     def print_response(self):
         self.conman.message(1, self._response)
-    print_response.priority = 100    
-    
-    def timeout(self, timeout):
-        self._timeout = timeout
-        """Used to set the timeout variable, used by expect and expect_regex"""
-        pass
-    timeout.priority = 0
-    timeout.hooks = [hook_show_args]
 
+    @command(0, [hook_show_args])
+    def timeout(self, timeout):
+        """Used to set the timeout variable, used by expect and expect_regex"""        
+        self._timeout = timeout
+
+    @command(0, [hook_show_args])
     def print_time(self, formatting="%H:%M:%S"):
         """High-priority time-print function. Optional argument specifies formatting."""
         self.conman.message(1, strftime(formatting, gmtime()))
-    print_time.priority = 0
-    print_time.hooks = [hook_show_args]
 
+    @command(100, [hook_show_args])
     def log(self, filename):
         """Low-priority function to log the sent and received messages to a given file."""
         try:
@@ -194,9 +191,8 @@ class Frame(object):
             self.conman.ferror("Failed to open file " + filename + " for logging.")
         infile.write(self.send["content"] + "\n\n" + self._response + "\n\n")
         infile.close()
-    log.priority = 100
-    log.hooks = [hook_show_args]
 
+    @command(8, [hook_show_args])
     def reject(self, array):
         """Throw an error if any string in list-argument is present in given frame's responses."""
         if isinstance(array, list):
@@ -205,9 +201,8 @@ class Frame(object):
         else:
             if re.search(re.escape(str(array)), self._response):
                 self.conman.terror(["Captured rejected regex substring in response:" + array.strip(), self._response])                            
-    reject.priority = 8
-    reject.hooks = [hook_show_args]
 
+    @command(8, [hook_show_args])
     def reject_regex(self, array):
         """Throw an error if any regex in list-argument is present in given frame's responses."""
         if isinstance(array, list):
@@ -216,9 +211,8 @@ class Frame(object):
         else:
             if re.search(str(array), self._response):
                 self.conman.terror(["Captured rejected regex substring in response:" + array.strip(), self._response]) 
-    reject_regex.priority = 8
-    reject_regex.hooks = [hook_show_args]
 
+    @command(6, [hook_var_replace, hook_show_args])
     def expect(self, array, regex = False):
         """Try and capture everything in array before time runs out."""
         diminishing_expect = [re.escape(x) for x in array] if regex == False else array
@@ -243,9 +237,8 @@ class Frame(object):
             for k in captured_lines_local:
                 self.conman.message(1, "Captured in response: " + k.strip())
         self._timeout = {"timeout": timer}
-    expect.priority = 6
-    expect.hooks = [hook_var_replace, hook_show_args]    
 
+    @command(10, [hook_var_replace, hook_show_args])
     def store_regex(self, regexes):
         """Capture regexes in responses and store in the storage dictionary. Accepts lists and strings."""
         def store_regex_single(self, regex):
@@ -260,9 +253,8 @@ class Frame(object):
                 store_regex_single(self, regex)
         elif isinstance(regexes, str):
             store_regex_single(self, regexes)
-    store_regex.priority = 10
-    store_regex.hooks = [hook_var_replace, hook_show_args]
 
+    @command(12, [hook_var_replace, hook_show_args])
     def check_regex(self, regexes):
         """Verify that the regexes extracted in the current frame match those stored with store_regex.
         Regexes stored and retrieved based purely on the regex that's used to capture them."""
@@ -282,13 +274,9 @@ class Frame(object):
                 check_regex_single(self, regex)
         else:
             check_regex_single(self, regexes)
-    check_regex.priority = 12
-    check_regex.hooks = [hook_var_replace, hook_show_args]
 
+    @command(0, [hook_show_args])
     def vars(self, dict):
         """Replaces all instances of one substring with another."""
         self._vars = dict
-    vars.priority = 0
-    vars.hooks = [hook_show_args]
-
     
