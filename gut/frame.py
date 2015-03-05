@@ -22,12 +22,24 @@ class Frame(object):
                 if func_string not in [func.__name__ for func in functions]:
                     conman.ferror("Unexpected function specified: \"" + func_string + "\"")
                     
-            
-        def handleAnyEntry(local_settings, func):
+        def handleParametricEntry(local_settings, func, conman):
             self.args[func.__name__] = local_settings[func.__name__]
+                
+        def handleSingleEntry(local_settings, func, conman):
+            argspec = inspect.getargspec(func)
+            args = argspec.args[1:]
+            defaults = argspec.defaults or []
+            if len(args) > len(defaults) + 1:
+                conman.terror("Not enough arguments for function \"" + func.__name__ + "\": Expected " + args + "\"")
+            else:
+                if local_settings[func.__name__] == None:
+                    self.args[func.__name__] = {}
+                else:
+                    self.args[func.__name__] = {args[0]: local_settings[func.__name__]}
 
         # Construct a list of all available functions that have a priority attribute.
-        functions = [method for name, method in Frame.__dict__.items() if (callable(method) and hasattr(method, "priority"))]
+        
+        # functions = [method for name, method in Frame.__dict__.items() if (callable(method) and hasattr(method, "priority"))]
         functions = [getattr(self, name) for name in dir(self) if (callable(getattr(self, name)) and hasattr(getattr(self, name), "priority"))]        
         conman.message(3, "Sending " + local_settings["interface"] + " frame")
 
@@ -35,7 +47,10 @@ class Frame(object):
 
         for func in functions:
             if func.__name__ in local_settings:
-                handleAnyEntry(local_settings, func)
+                if isinstance(local_settings[func.__name__], dict) and all([x in inspect.getargspec(func).args for x in local_settings[func.__name__]]):
+                    handleParametricEntry(local_settings, func, conman)
+                else:
+                    handleSingleEntry(local_settings, func, conman)                
         self.conman = conman
         self.conman.updateterminal() # Update the terminal on every frame sent. Not necessary, but performance isn't an issue right now.
 
@@ -65,22 +80,14 @@ class Frame(object):
             if (func.quiet == False): 
                 self.conman.message(2, "Running " + func.__name__)
 
-            argspec = inspect.getargspec(func)
-            # print(argspec)
-            # print(func_args)
-            # Dictionary with argument:value mapping
-            if all([x in argspec.args for x in func_args]) and isinstance(func_args, dict):
-                for arg in func_args:
-                    if arg in func.hooks:
-                        for hook in func.hooks[arg]:
-                            func_args[arg] = hook(self, func_args[arg])
-                func(**func_args)
-
-            # Singular value being passed as argument
-            else:
-                for hook in func.hooks:
-                    func_args = hook(self, func_args)                
-                func(func_args)
+            for arg in func_args:
+                if isinstance(func.hooks, dict) and (arg in func.hooks):
+                    for hook in func.hooks[arg]:
+                        func_args[arg] = hook(self, func_args[arg])
+                elif isinstance(func.hooks, list):
+                    for hook in func.hooks:
+                        func_args[arg] = hook(self, func_args[arg])                            
+            func(**func_args)
 
     def deriveFunctionWithPriority(self, function, priority, name=None):
         """Create a copy of an existing command function with a specified priority and optionally name"""
@@ -91,7 +98,7 @@ class Frame(object):
         newfunction.hooks = function.hooks
         return newfunction
                 
-    def insertFunctionWithPriority(self, top_function, copied_function, args = None, priority = None):
+    def insertFunctionWithPriority(self, top_function, copied_function, args = {}, priority = None):
         """Create a copy of a function with priority and insert it in the appropriate place in the command queue."""
         if priority == None:
             priority = copied_function.priority
@@ -99,7 +106,7 @@ class Frame(object):
         setattr(self, newfunc.__name__, newfunc)
         self.functions.append(getattr(self, newfunc.__name__))
         self.functions.sort(key=lambda x: x.priority)
-        self.args[newfunc.__name__] = None
+        self.args[newfunc.__name__] = args
         
 ################################################################################
 #################### Hooks

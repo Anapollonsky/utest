@@ -50,7 +50,8 @@ global:
   vars:
     cd: ls
 cmd:
-  send: ls; cd /; ls;
+  send:
+    content: ls; cd /; ls;
   print_response:
   show_args:
   # expect:
