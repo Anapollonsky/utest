@@ -11,7 +11,8 @@ class Frame(object):
     
     def __init__(self, local_settings, conman):
         self.responses = ""
-
+        self.args = {}
+        
         def checkFunctionsExist(local_settings, functions, conman):
             """Verify that all the functions specified in local_settings can be found."""
             for func_string in local_settings:
@@ -24,8 +25,15 @@ class Frame(object):
             for arg in local_settings[func.__name__]:
                 if arg not in func_args:
                     conman.ferror("Unexpected function argument \"" + arg + "\" for function \"" + func.__name__ + "\".")
-            # Add to frame object
-            setattr(self, func.__name__, local_settings[func.__name__])
+            self.args[func.__name__] = local_settings[func.__name__]
+
+        def handleEmptyEntry(local_settings, conman, func):
+            """If the function entry is empty, set arglist to None."""
+            self.args[func.__name__] = None
+
+        def handleCompressedEntry(local_settings, conman, func):
+            """If in compressed format, construct a dictionary. Use name of 2nd function argument as key."""
+            self.args[func.__name__] = {inspect.getargspec(func)[0][1]: local_settings[func.__name__]}
 
         # Construct a list of all available functions that have a priority attribute.
         functions = [method for name, method in Frame.__dict__.items() if (callable(method) and hasattr(method, "priority"))]
@@ -39,10 +47,9 @@ class Frame(object):
                 if isinstance(local_settings[func.__name__], dict): # If already in proper dictionary format
                     handleDictEntry(local_settings, conman, func)
                 elif local_settings[func.__name__] == None:
-                    setattr(self, "_" + func.__name__, None)        
-                else: 
-                    # If in compressed format, construct a dictionary. Use name of 2nd function argument as key. Add to frame object.
-                    setattr(self, "_" + func.__name__, {inspect.getargspec(func)[0][1]: local_settings[func.__name__]})
+                    handleEmptyEntry(local_settings, conman, func)
+                else:
+                    handleCompressedEntry(local_settings, conman, func)
         self.conman = conman
         self.conman.updateterminal() # Update the terminal on every frame sent. Not necessary, but performance isn't an issue right now.
 
@@ -53,20 +60,18 @@ class Frame(object):
     def perform_actions(self):
         """Will go through all of the properties of a frame, match them up against available functions, and run them with the proper arguments in the order as determined by the functions' priority"""
         # Look through available functions, check if they're referenced on the frame object, and put those that are on a list.
-        functions = [getattr(self, name) for name in dir(self) if (callable(getattr(self, name)) and hasattr(getattr(self, name), "priority") and hasattr(self, "_" + name))]
-        print(functions)
-        # print (dir(self))
+        functions = [getattr(self, name) for name in dir(self) if (callable(getattr(self, name)) and hasattr(getattr(self, name), "priority") and name in self.args)]
+
         # Sort by priority in ascending order
         functions.sort(key=lambda x: x.priority)
         for func in functions:
-            # The argument is a dictionary of arguments, match every value to an argument with the same name as the key of that value.
-            if getattr(self, "_" + func.__name__) != None:
-                func_args = dict(getattr(self, "_" + func.__name__))
-            else:
+            # Match every value to an argument with the same name as the key of that value.
+            if self.args[func.__name__] == None:
                 func_args = {}
+            else:
+                func_args = dict(self.args[func.__name__])
+
             ut.recursive_dict_merge(func_args, func.defaults)
-            # func_arg_names = inspect.getargspec(func).args
-            
             if (func.quiet == False): 
                 self.conman.message(2, "Running " + func.__name__)
             func(**func_args)
@@ -74,6 +79,7 @@ class Frame(object):
 
     def interface(self, interface):
         """Used to set the connection interface. """
+        self._interface = interface
         pass
     interface.priority = 0
     interface.quiet = True
@@ -94,13 +100,14 @@ class Frame(object):
 
     def connect(self):
         """Used to initiate the connection."""
-        self.connection = self.conman.openconnection(self) 
+        self._connection = self.conman.openconnection(self) 
     connect.priority = 1
     connect.required = True
     connect.quiet = True
 
     
     def timeout(self, timeout):
+        self._timeout = timeout
         """Used to set the timeout variable, used by expect and expect_regex"""
         pass
     timeout.priority = 0
@@ -157,7 +164,7 @@ class Frame(object):
     def expect(self, array):
         """Try and capture everything in array before time runs out."""
         diminishing_expect = [re.escape(x) for x in array]
-        timer = self._timeout["timeout"] if hasattr(self, "_timeout") else 10
+        timer = self._timeout if hasattr(self, "_timeout") else 10
         if hasattr(self, "responses"):
             for k in diminishing_expect[:]:
                 if re.search(k, self.responses): 
@@ -184,7 +191,7 @@ class Frame(object):
     def expect_regex(self, array):
         """Try and capture everything in array before time runs out."""
         diminishing_expect = array
-        timer = self._timeout["timeout"] if hasattr(self, "_timeout") else 10
+        timer = self._timeout if hasattr(self, "_timeout") else 10
         if hasattr(self, "responses"):
             for k in diminishing_expect[:]:
                 if re.search(k, self.responses):
