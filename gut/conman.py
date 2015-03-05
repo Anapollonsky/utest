@@ -93,7 +93,7 @@ class Conman:
         pass
 
     def message1(self, content):
-        print("  > " + content.strip())
+        print("  > " +  content.strip())
         
     def message2(self, content):
         print(content.strip())

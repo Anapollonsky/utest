@@ -48,41 +48,6 @@ def expect(frame, array):
     frame.timeout = {"timeout": timer}
 expect.priority = 6
 
-# def remove_whitespace_send(frame):
-#     """Remove all whitespace from send:content, expect: array, expect_regex:array"""
-#     frame.send["content"] = 
-# remove_whitespace_send.priority = 1
-
-# def remove_whitespace_receive(frame):
-#     """Remove all whitespace from captured responses"""
-
-def expect(frame, array):
-    """Try and capture everything in array before time runs out."""
-    diminishing_expect = [re.escape(x) for x in array]
-    timer = frame.timeout["timeout"] if hasattr(frame, "timeout") else 10
-    if hasattr(frame, "responses"):
-        for k in diminishing_expect[:]:
-            if re.search(k, frame.responses): 
-                diminishing_expect.remove(k)        
-    while diminishing_expect:
-        captured_lines_local = [] 
-        iter_time = time.time()
-        temp_expect = list(diminishing_expect)
-        i = frame.expectmessage(temp_expect, timer)
-        if i[1] == True:
-            frame.conman.terror(["Timeout while waiting for the following substrings:\n" + str(diminishing_expect) + ".", frame.responses])        
-        timer -= (time.time() - iter_time) # Subtract time it took to capture
-        capture = i[0] # Captured value
-        frame.addresponse(capture)        
-        for k in diminishing_expect[:]:
-            if re.search(k, frame.responses):
-                captured_lines_local.append(k)
-                diminishing_expect.remove(k)
-        for k in captured_lines_local:
-            frame.conman.message(1, "Captured in response: " + k.strip())
-    frame.timeout = {"timeout": timer}
-expect.priority = 6
-
 def expect_regex(frame, array):
     """Try and capture everything in array before time runs out."""
     diminishing_expect = array

@@ -26,13 +26,13 @@ print_time.priority = 0
 
 def print_response(frame):
     """Low-priority function that prints the captured response to the sent message."""
-    frame.conman.message(1, "\n" + frame.responses + "\n")
+    frame.conman.message(1, "\n" + str(frame.responses) + "\n")
 print_response.priority = 100    
 
 
 def print_send(frame):
     """Low-priority function that prints the sent message."""
-    frame.conman.message(1, "\n" + frame.send["content"] + "\n")
+    frame.conman.message(1, "\n" + str(frame.send["content"]) + "\n")
 print_send.priority = 100    
 
 

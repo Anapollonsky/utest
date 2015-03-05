@@ -16,7 +16,7 @@ class Frame:
     def perform_actions(self):
         """Will go through all of the properties of a frame, match them up against available functions, and run them with the proper arguments in the order as determined by the functions' priority"""
         # Look through available functions, check if they're referenced on the frame object, and put those that are on a list.
-        functions = [method for name, method in fu.__dict__.iteritems() if (callable(method) and hasattr(method, "priority") and hasattr(self, method.__name__))]
+        functions = [method for name, method in fu.__dict__.items() if (callable(method) and hasattr(method, "priority") and hasattr(self, method.__name__))]
         # Sort by priority in ascending order
         functions.sort(key=lambda x: x.priority)
         for func in functions:
@@ -59,7 +59,7 @@ class Frame:
             setattr(frame, func.__name__, local_settings[func.__name__])
 
         # Construct a list of all available functions that have a priority attribute.
-        functions = [method for name, method in fu.__dict__.iteritems() if (callable(method) and hasattr(method, "priority"))]
+        functions = [method for name, method in fu.__dict__.items() if (callable(method) and hasattr(method, "priority"))]
         checkFunctionRequirements(local_settings, functions, conman)
         conman.message(3, "Sending " + local_settings["interface"] + " frame")
 

@@ -27,7 +27,8 @@ class sh_Frame(Frame):
         if results == 0:
             return (None, True) # Return no capture, timeout
         else:
-            return (self.connection.before + self.connection.after, False) # Return capture, no timeout
+            return ((self.connection.before + self.connection.after).decode("utf-8"), False) # Return capture, no timeout
+        
 
     def capturemessage(self):
         """Try to capture text without an "expect" clause."""
@@ -37,4 +38,4 @@ class sh_Frame(Frame):
             read_value = self.connection.before
         except:
             read_value = ""
-        return read_value
+        return read_value.decode("utf-8")

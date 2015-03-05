@@ -38,12 +38,6 @@ interface.priority = 0
 interface.quiet = True
 interface.required = True
 
-# def shell(frame, shell):
-#     """Used to set the connection username, if any."""
-#     pass
-# shell.priority = 0
-# shell.quiet = True
-
 def send(frame, content):
     """Send the frame."""
     frame.sendframe()
@@ -56,4 +50,4 @@ def capture(frame):
     frame.addresponse(test)
 capture.priority = 7
 capture.required = True
-capture.quiet = True
+capture.quiet = False

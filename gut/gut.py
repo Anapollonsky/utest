@@ -56,7 +56,7 @@ def parse_block(block, command_queue, conman):
  
 def assign_function_attributes(conman):
     """Assign default attributes to all functions in functions.py"""
-    functions = [method for name, method in fu.__dict__.iteritems() if (callable(method) and hasattr(method, "priority"))]
+    functions = [method for name, method in fu.__dict__.items() if (callable(method) and hasattr(method, "priority"))]
     for func in functions:
         for attr in fu.default_func_attrs:
             if not hasattr(func, attr):
@@ -81,7 +81,6 @@ if __name__ == "__main__":
         instream = open(args.file)
     elif not sys.stdin.isatty():
         instream = sys.stdin
-        print instream
     else:
         conman.ferror("No input stream found.")
     command_queue_base = pa.parse_yaml(instream, conman)        

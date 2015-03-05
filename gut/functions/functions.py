@@ -1,7 +1,7 @@
 ## Import functions from external files here.
-from base_funcs import *
-from regex_funcs import *
-from util_funcs import *
+from .base_funcs import *
+from .regex_funcs import *
+from .util_funcs import *
 
 # Describe the default attributes of functions. These are used for all functions if not otherwise
 # explicitly set. Priority is excluded because a function without a defined priority cannot be run.
