@@ -1,9 +1,15 @@
 #!/usr/bin/env python
+import os
+import inspect
 import re
-import time
+
 import sys
 import argparse
-import sys
+
+
+print(os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))))
+
 import yaml_parser as pa
 import utils as ut
 import functions.functions as fu
@@ -85,6 +91,7 @@ def parse_command_queue (conman, queue):
     conman.message(3, "Leaving \"" + queue[1] + "\"")    
     
 if __name__ == "__main__":
+
     args = parser.parse_args()
     conman = Conman(args.verbose)    
     if args.file:

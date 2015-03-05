@@ -1,5 +1,7 @@
-import time
+
 from copy import deepcopy
+import time
+import types
 import re
 import inspect
 import utils as ut
@@ -45,11 +47,12 @@ class Frame(object):
         """Will go through all of the properties of a frame, match them up against available functions, and run them with the proper arguments in the order as determined by the functions' priority"""
 
         # Look through available functions, check if they're referenced on the frame object, and put those that are on a list.
-        functions = [getattr(self, name) for name in dir(self) if (callable(getattr(self, name)) and hasattr(getattr(self, name), "priority") and name in self.args)]
+        self.functions = [getattr(self, name) for name in dir(self) if (callable(getattr(self, name)) and hasattr(getattr(self, name), "priority") and name in self.args)]
 
         # Sort by priority in ascending order
-        functions.sort(key=lambda x: x.priority)
-        for func in functions:
+        self.functions.sort(key=lambda x: x.priority)
+        while self.functions:
+            func = self.functions.pop(0)
             # Match every value to an argument with the same name as the key of that value.
             if self.args[func.__name__] == None:
                 func_args = {}
@@ -62,9 +65,9 @@ class Frame(object):
             if (func.quiet == False): 
                 self.conman.message(2, "Running " + func.__name__)
 
-            
             argspec = inspect.getargspec(func)
-
+            # print(argspec)
+            # print(func_args)
             # Dictionary with argument:value mapping
             if all([x in argspec.args for x in func_args]) and isinstance(func_args, dict):
                 for arg in func_args:
@@ -73,26 +76,31 @@ class Frame(object):
                             func_args[arg] = hook(self, func_args[arg])
                 func(**func_args)
 
-            # Dictionary being passed directly as argument
-            elif isinstance(func_args, dict):
-                for arg in func_args:
-                    for hook in func.hooks:
-                        func_args[arg] = hook(self, func_args[arg])
-                func(func_args)
-
-            # List being passed directly as argument
-            elif isinstance(func_args, list):
-                for arg in func_args:
-                    for hook in func.hooks:
-                        arg = hook(self, arg)
-                func(func_args)
-
             # Singular value being passed as argument
             else:
                 for hook in func.hooks:
                     func_args = hook(self, func_args)                
                 func(func_args)
 
+    def deriveFunctionWithPriority(self, function, priority, name=None):
+        """Create a copy of an existing command function with a specified priority and optionally name"""
+        newfunction = types.FunctionType(function.__code__, function.__globals__, name or function.__name__, function.__defaults__, function.__closure__)
+        newfunction.priority = priority
+        newfunction.quiet = function.quiet
+        newfunction.defaults = function.defaults
+        newfunction.hooks = function.hooks
+        return newfunction
+                
+    def insertFunctionWithPriority(self, top_function, copied_function, args = None, priority = None):
+        """Create a copy of a function with priority and insert it in the appropriate place in the command queue."""
+        if priority == None:
+            priority = copied_function.priority
+        newfunc = self.deriveFunctionWithPriority(copied_function, priority, copied_function.__name__ + "(" + top_function.__name__ + ")")
+        setattr(self, newfunc.__name__, newfunc)
+        self.functions.append(getattr(self, newfunc.__name__))
+        self.functions.sort(key=lambda x: x.priority)
+        self.args[newfunc.__name__] = None
+        
 ################################################################################
 #################### Hooks
     def hook_var_replace(self, string):
@@ -103,7 +111,7 @@ class Frame(object):
 
     def hook_show_args(self, string):
         if hasattr(self, "_show_args"):
-            self.conman.message(1, "Argument: \"" + string + "\"")
+            self.conman.message(1, "Argument: \"" + str(string) + "\"")
         return string
 ################################################################################
 #################### Callable functions
@@ -122,7 +130,7 @@ class Frame(object):
         self.sendframe()
     send.priority = 4
     send.hooks = [hook_var_replace, hook_show_args]
-
+ 
     def show_args(self):
         self._show_args = True
     show_args.priority = 0
@@ -130,6 +138,7 @@ class Frame(object):
     def capture(self):
         """Capture some data."""
         self.addresponse(self.capturemessage())
+        # self.insertFunctionWithPriority(self.capture, self.print_response)
     capture.priority = 7
     capture.quiet = False
     capture.hooks = [hook_show_args]

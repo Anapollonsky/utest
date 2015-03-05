@@ -53,9 +53,9 @@ cmd:
   send: ls; cd /; ls;
   print_response:
   show_args:
-  expect:
-    - interfaces
-    - functions
-    - gut.py
+  # expect:
+  #   - interfaces
+  #   - functions
+  #   - gut.py
 
     

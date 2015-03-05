@@ -2,6 +2,7 @@ import os
 import glob
 import sys
 import inspect
+import importlib
 from frame import Frame
 import utils as ut
 
@@ -10,13 +11,10 @@ class Conman:
 
     def importinterfaces(self):
         """Import valid interfaces from gutdir/interfaces"""
-        sys.path.append('interfaces')        
-        interfaces = []
-        # print os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) + "/interfaces/")
         for file in glob.glob(os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) + "/interfaces/", "*.py")):
             filename = os.path.splitext(os.path.basename(file))[0]
-            # print filename
-            module = __import__(filename)
+            module = importlib.import_module('interfaces.' + filename)
+            interfaces = []
             for name, obj in inspect.getmembers(module):
                 if inspect.isclass(obj) and hasattr(obj, "interfacename"):
                     interfaces.append(obj)
@@ -30,7 +28,6 @@ class Conman:
         self.storage = {}
         self.global_permanent = {"capture": None, "connect": None}        
         self.interfaces = self.importinterfaces()
-        
         
     ## Connection Management    
     def openconnection(self, frame):
