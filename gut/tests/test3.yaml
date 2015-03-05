@@ -49,14 +49,15 @@ global:
   interface: shell
   vars:
     cd: ls
+
 cmd:
   send:
-    content: ls; cd /; ls;
+    content: cd /;
   print_response:
   show_args:
-  # expect:
-  #   - interfaces
-  #   - functions
-  #   - gut.py
+  expect:
+    array:
+      - (?i)HOME
+    regex: True
 
     
