@@ -40,8 +40,18 @@ def parse_global(settings, conman):
 def parse_command(local_settings, conman):
     """Generate new local settings from global_temporary settings and new "cmd" block. Perform command actions."""
     ut.recursive_dict_merge(local_settings, conman.global_temporary)
-    frame = Frame.frameFromLocalSettings(conman, local_settings)
-    frame.perform_actions()
+    
+    # Construct appropriate frame based on interface
+    for interface in conman.interfaces:
+        if interface.interfacename == local_settings["interface"]:
+            frame = interface(local_settings, conman)
+            break
+        else:
+            frame = None
+    if frame == None:
+        conman.ferror("Interface " + local_settings["interface"] + " not found.")
+    else:
+        frame.perform_actions()
     
 def parse_block(block, command_queue, conman):
     """Delegate actions based on top-level block type."""
