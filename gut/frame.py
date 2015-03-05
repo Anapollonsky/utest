@@ -61,22 +61,38 @@ class Frame(object):
             if isinstance(func_args, dict):
                 ut.recursive_dict_merge(func_args, func.defaults)
 
-            # run appropriate hooks
-            for arg in func_args:
-                if arg in func.hooks:
-                    for hook in func.hooks[arg]:
-                        func_args[arg] = hook(self, func_args[arg])
-                        
             if (func.quiet == False): 
                 self.conman.message(2, "Running " + func.__name__)
+
+            
             argspec = inspect.getargspec(func)
-            # Dictionary input, expand it if it matches argument names or function specifies keywords
-            if all([x in argspec.args for x in func_args]) or argspec.keywords:
+
+            # Dictionary with argument:value mapping
+            if all([x in argspec.args for x in func_args]) and isinstance(func_args, dict):
+                for arg in func_args:
+                    if arg in func.hooks:
+                        for hook in func.hooks[arg]:
+                            func_args[arg] = hook(self, func_args[arg])
                 func(**func_args)
-            # Function expects positional arguments!
-            elif argspec.varargs:
-                func(*func_args)
+
+            # Dictionary being passed directly as argument
+            elif isinstance(func_args, dict):
+                for arg in func_args:
+                    for hook in func.hooks:
+                        func_args[arg] = hook(self, func_args[arg])
+                func(func_args)
+
+            # List being passed directly as argument
+            elif isinstance(func_args, list):
+                for arg in func_args:
+                    for hook in func.hooks:
+                        arg = hook(self, arg)
+                func(func_args)
+
+            # Singular value being passed as argument
             else:
+                for hook in func.hooks:
+                    func_args = hook(self, func_args)                
                 func(func_args)
 
 ################################################################################
@@ -84,7 +100,7 @@ class Frame(object):
     def hook_var_replace(self, string):
         if hasattr(self, "_vars"):
             for variable in self._vars:
-                string = re.sub(variable, self._vars[variable], string)
+                string = re.sub(variable, str(self._vars[variable]), string)
         return string
 
 ################################################################################
@@ -102,7 +118,7 @@ class Frame(object):
         self._send = content
         self.sendframe()
     send.priority = 4
-    send.hooks = {"content": [hook_var_replace]}
+    send.hooks = [hook_var_replace]
 
     def capture(self):
         """Capture some data."""
@@ -150,7 +166,7 @@ class Frame(object):
     log.priority = 100
     log.quiet = True
 
-    def reject(self, *array):
+    def reject(self, array):
         """Throw an error if any string in list-argument is present in given frame's responses."""
         if isinstance(array, list):
             if any([re.search(k, self.responses) for k in [re.escape(str(x)) for x in array]]):
@@ -160,7 +176,7 @@ class Frame(object):
                 self.conman.terror(["Captured rejected regex substring in response:" + array.strip(), self.responses])                            
     reject.priority = 8
 
-    def reject_regex(self, *array):
+    def reject_regex(self, array):
         """Throw an error if any regex in list-argument is present in given frame's responses."""
         if isinstance(array, list):
             if any([re.search(str(k), self.responses) for k in array]):
@@ -170,7 +186,7 @@ class Frame(object):
                 self.conman.terror(["Captured rejected regex substring in response:" + array.strip(), self.responses]) 
     reject_regex.priority = 8
 
-    def expect(self, *array):
+    def expect(self, array):
         """Try and capture everything in array before time runs out."""
         print(array)
         diminishing_expect = [re.escape(x) for x in array]
@@ -198,7 +214,7 @@ class Frame(object):
         self._timeout = {"timeout": timer}
     expect.priority = 6
 
-    def expect_regex(self, *array):
+    def expect_regex(self, array):
         """Try and capture everything in array before time runs out."""
         diminishing_expect = array
         timer = self._timeout if hasattr(self, "_timeout") else 10
@@ -226,7 +242,7 @@ class Frame(object):
     expect_regex.priority = 6
 
 
-    def store_regex(self, *regexes):
+    def store_regex(self, regexes):
         """Capture regexes in responses and store in the storage dictionary. Accepts lists and strings."""
         def store_regex_single(self, regex):
             match = re.search(regex, self.responses)
@@ -242,7 +258,7 @@ class Frame(object):
             store_regex_single(self, regexes)
     store_regex.priority = 10
 
-    def check_regex(self, *regexes):
+    def check_regex(self, regexes):
         """Verify that the regexes extracted in the current frame match those stored with store_regex.
         Regexes stored and retrieved based purely on the regex that's used to capture them."""
         def check_regex_single(self, regex):
@@ -264,8 +280,8 @@ class Frame(object):
             check_regex_single(self, regexes)
     check_regex.priority = 12
 
-    def vars(self, **kwargs):
+    def vars(self, variables):
         """Replaces all instances of one substring with another."""
-        self._vars = kwargs
+        self._vars = variables
     vars.priority = 0
     

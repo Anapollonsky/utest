@@ -12,7 +12,6 @@ def recursive_dict_merge(a, b):
                 else:
                     pass # if identical singles or different, a stays same
             else:
-                print("test" + str(b[key])) 
                 a[key] = b[key]
 
     elif isinstance(a, list) and isinstance(b, list):
