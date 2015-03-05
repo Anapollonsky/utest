@@ -6,7 +6,7 @@ from frame import Frame
 class ARD546_Frame(Frame):
     interfacename = "ard546"    
 
-    def establishConnection(self, address):
+    def establish_connection(self, address):
         """ Connection procedure for ard546."""
         try:
             con = telnetlib.Telnet(address, 1307, 10)
@@ -15,11 +15,11 @@ class ARD546_Frame(Frame):
         time.sleep(.2)
         return con
 
-    def sendframe(self):
+    def send_frame(self):
         """Transmit a frame object's content to intended recipient."""
         self._connection.write(self.send["content"] + "\n")
 
-    def expectmessage(self, array, timer):
+    def expect_message(self, array, timer):
         """Wait for a message from an array, return either a capture or a timeout."""                
         results = self._connection.expect(array, timer)
         if results[0] == -1:
@@ -27,8 +27,18 @@ class ARD546_Frame(Frame):
         else:
             return (results[2], False) # Return capture, no timeout        
 
-    def capturemessage(self):
+    def capture_message(self):
         """Try to capture text without an "expect" clause."""
         time.sleep(.4)
         return self._connection.read_very_eager()
-        
+
+################################################################################
+#################### Command functions
+
+    def address(self, address):
+        """Used to set the connection address."""
+        self._address = address
+    address.priority = 0
+    address.quiet = True
+    address.required = False
+

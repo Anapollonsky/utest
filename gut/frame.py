@@ -4,24 +4,23 @@ import types
 import re
 import inspect
 import utils as ut
-import functions.functions as fu
  
 class Frame(object):
     """Representation of a sent/received frame."""
 
-    default_func_attrs = {"defaults":{}, "quiet": False, "hooks": {}}
+    default_func_attrs = {"hooks": {}}
     
     def __init__(self, local_settings, conman):
-        self.responses = ""
+        self._response = ""
         self.args = {}
         
-        def checkFunctionsExist(local_settings, functions, conman):
+        def check_functions_exist(local_settings, functions, conman):
             """Verify that all the functions specified in local_settings can be found."""
             for func_string in local_settings:
                 if func_string not in [func.__name__ for func in functions]:
                     conman.ferror("Unexpected function specified: \"" + func_string + "\"")
                     
-        def handleParametricEntry(local_settings, func, conman, argspec):
+        def handle_parametric_entry(local_settings, func, conman, argspec):
             """Handle parametric argument set."""
             args = argspec.args[1:]
             defaults = argspec.defaults or []
@@ -33,7 +32,7 @@ class Frame(object):
             else: 
                 self.args[func.__name__] = local_settings[func.__name__]
 
-        def handleEmptyEntry(local_settings, func, conman, argspec):
+        def handle_empty_entry(local_settings, func, conman, argspec):
             """Handle empty argument set."""
             args = argspec.args[1:]
             defaults = argspec.defaults or [] 
@@ -42,7 +41,7 @@ class Frame(object):
             else:
                 self.args[func.__name__] = {}
                 
-        def handleSingleEntry(local_settings, func, conman, argspec):
+        def handle_single_entry(local_settings, func, conman, argspec):
             """Handle nonlabeled single argument set."""
             args = argspec.args[1:]
             defaults = argspec.defaults or []
@@ -55,27 +54,23 @@ class Frame(object):
         functions = [getattr(self, name) for name in dir(self) if (callable(getattr(self, name)) and hasattr(getattr(self, name), "priority"))]        
         conman.message(3, "Sending " + local_settings["interface"] + " frame")
 
-        checkFunctionsExist(local_settings, functions, conman)
+        check_functions_exist(local_settings, functions, conman)
 
         for func in functions:
             if func.__name__ in local_settings:
                 argspec = inspect.getargspec(func)                 
                 # If the passed argument is a dictionary that looks like it's assignment a data structure to each function argument
                 if isinstance(local_settings[func.__name__], dict) and all([x in inspect.getargspec(func).args for x in local_settings[func.__name__]]):
-                    handleParametricEntry(local_settings, func, conman, argspec)
+                    handle_parametric_entry(local_settings, func, conman, argspec)
                 # If the passed argument is empty
                 elif local_settings[func.__name__] == None:
-                    handleEmptyEntry(local_settings, func, conman, argspec) 
+                    handle_empty_entry(local_settings, func, conman, argspec) 
                 # If the passed argument is something else
                 else:
-                    handleSingleEntry(local_settings, func, conman, argspec) 
+                    handle_single_entry(local_settings, func, conman, argspec) 
         self.conman = conman
-        self.conman.updateterminal() # Update the terminal on every frame sent. Not necessary, but performance isn't an issue right now.
-
-        
-    def addresponse(self, response):
-        self.responses = self.responses + response
-        
+        self.conman.update_terminal() # Update the terminal on every frame sent. Not necessary, but performance isn't an issue right now.
+                
     def perform_actions(self):
         """Will go through all of the properties of a frame, match them up against available functions, and run them with the proper arguments in the order as determined by the functions' priority"""
 
@@ -92,12 +87,8 @@ class Frame(object):
             else:
                 func_args = deepcopy(self.args[func.__name__])
 
-            if isinstance(func_args, dict):
-                ut.recursive_dict_merge(func_args, func.defaults)
-
-            if (func.quiet == False): 
-                self.conman.message(2, "Running " + func.__name__)
-
+            self.conman.message(2, "Running " + func.__name__)
+            
             for arg in func_args:
                 if isinstance(func.hooks, dict) and (arg in func.hooks):
                     for hook in func.hooks[arg]:
@@ -111,8 +102,6 @@ class Frame(object):
         """Create a copy of an existing command function with a specified priority and optionally name"""
         newfunction = types.FunctionType(function.__code__, function.__globals__, name or function.__name__, function.__defaults__, function.__closure__)
         newfunction.priority = priority
-        newfunction.quiet = function.quiet
-        newfunction.defaults = function.defaults
         newfunction.hooks = function.hooks
         return newfunction
                 
@@ -155,13 +144,12 @@ class Frame(object):
         self._interface = interface
         pass
     interface.priority = 0
-    interface.quiet = False
     interface.hooks = [hook_show_args]
 
     def send(self, content):
         """Send the frame."""
         self._send = content
-        self.sendframe()
+        self.send_frame()
     send.priority = 4
     send.hooks = [hook_var_replace, hook_show_args]
  
@@ -171,20 +159,18 @@ class Frame(object):
 
     def capture(self):
         """Capture some data."""
-        self.addresponse(self.capturemessage())
+        self._response += self.capture_message()
         # self.insertFunctionWithPriority(self.capture, self.print_response)
     capture.priority = 7
-    capture.quiet = False
     capture.hooks = [hook_show_args]
 
     def connect(self):
         """Used to initiate the connection."""
         self._connection = self.conman.openconnection(self) 
     connect.priority = 1
-    connect.quiet = False
 
     def print_response(self):
-        self.conman.message(1, self.responses)
+        self.conman.message(1, self._response)
     print_response.priority = 100    
     
     def timeout(self, timeout):
@@ -206,31 +192,30 @@ class Frame(object):
             infile = open(filename, 'a')
         except IOError:
             self.conman.ferror("Failed to open file " + filename + " for logging.")
-        infile.write(self.send["content"] + "\n\n" + self.responses + "\n\n")
+        infile.write(self.send["content"] + "\n\n" + self._response + "\n\n")
         infile.close()
     log.priority = 100
     log.hooks = [hook_show_args]
-    log.quiet = False
 
     def reject(self, array):
         """Throw an error if any string in list-argument is present in given frame's responses."""
         if isinstance(array, list):
-            if any([re.search(k, self.responses) for k in [re.escape(str(x)) for x in array]]):
-                self.conman.terror(["Captured rejected substring in response:" + k.strip(), self.responses])
+            if any([re.search(k, self._response) for k in [re.escape(str(x)) for x in array]]):
+                self.conman.terror(["Captured rejected substring in response:" + k.strip(), self._response])
         else:
-            if re.search(re.escape(str(array)), self.responses):
-                self.conman.terror(["Captured rejected regex substring in response:" + array.strip(), self.responses])                            
+            if re.search(re.escape(str(array)), self._response):
+                self.conman.terror(["Captured rejected regex substring in response:" + array.strip(), self._response])                            
     reject.priority = 8
     reject.hooks = [hook_show_args]
 
     def reject_regex(self, array):
         """Throw an error if any regex in list-argument is present in given frame's responses."""
         if isinstance(array, list):
-            if any([re.search(str(k), self.responses) for k in array]):
-                    self.conman.terror(["Captured rejected regex substring in response:" + k.strip(), self.responses])
+            if any([re.search(str(k), self._response) for k in array]):
+                    self.conman.terror(["Captured rejected regex substring in response:" + k.strip(), self._response])
         else:
-            if re.search(str(array), self.responses):
-                self.conman.terror(["Captured rejected regex substring in response:" + array.strip(), self.responses]) 
+            if re.search(str(array), self._response):
+                self.conman.terror(["Captured rejected regex substring in response:" + array.strip(), self._response]) 
     reject_regex.priority = 8
     reject_regex.hooks = [hook_show_args]
 
@@ -240,20 +225,19 @@ class Frame(object):
         timer = self._timeout if hasattr(self, "_timeout") else 10
         if hasattr(self, "responses"):
             for k in diminishing_expect[:]:
-                if re.search(k, self.responses): 
+                if re.search(k, self._response): 
                     diminishing_expect.remove(k)        
         while diminishing_expect:
             captured_lines_local = [] 
             iter_time = time.time()
             temp_expect = list(diminishing_expect)
-            i = self.expectmessage(temp_expect, timer)
+            i = self.expect_message(temp_expect, timer)
             if i[1] == True:
-                self.conman.terror(["Timeout while waiting for the following substrings:\n" + str(diminishing_expect) + ".", self.responses])        
+                self.conman.terror(["Timeout while waiting for the following substrings:\n" + str(diminishing_expect) + ".", self._response])        
             timer -= (time.time() - iter_time) # Subtract time it took to capture
-            capture = i[0] # Captured value
-            self.addresponse(capture)        
+            self._response += i[0] # Captured Value
             for k in diminishing_expect[:]:
-                if re.search(k, self.responses):
+                if re.search(k, self._response):
                     captured_lines_local.append(k)
                     diminishing_expect.remove(k)
             for k in captured_lines_local:
@@ -265,12 +249,12 @@ class Frame(object):
     def store_regex(self, regexes):
         """Capture regexes in responses and store in the storage dictionary. Accepts lists and strings."""
         def store_regex_single(self, regex):
-            match = re.search(regex, self.responses)
+            match = re.search(regex, self._response)
             if match:
                 self.conman.storage[regex] = match.groups()
                 self.conman.message(1, "Regex \"" + regex + "\" captured: \"" + str(match.groups()) + "\"")
             else:
-                self.conman.terror(["Expected regex \"" + regex + "\" not present in captured self.", self.responses])
+                self.conman.terror(["Expected regex \"" + regex + "\" not present in captured self.", self._response])
         if isinstance(regexes, list):
             for regex in regexes:
                 store_regex_single(self, regex)
@@ -283,7 +267,7 @@ class Frame(object):
         """Verify that the regexes extracted in the current frame match those stored with store_regex.
         Regexes stored and retrieved based purely on the regex that's used to capture them."""
         def check_regex_single(self, regex):
-            match = re.search(regex, self.responses)
+            match = re.search(regex, self._response)
             if match:
                 if not (self.conman.storage[regex] == match.groups()):
                     self.conman.terror(["Mismatch between captured and stored data for regex \"" + regex + "\".",
@@ -292,7 +276,7 @@ class Frame(object):
                 else:
                     self.conman.message(1, "Regex \"" + regex + "\" matches: \"" + str(match.groups()) + "\"")
             else:
-                self.conman.terror(["Expected regex " + regex + " not present in captured self.", self.responses]) 
+                self.conman.terror(["Expected regex " + regex + " not present in captured self.", self._response]) 
         if isinstance(regexes, list):
             for regex in regexes:
                 check_regex_single(self, regex)

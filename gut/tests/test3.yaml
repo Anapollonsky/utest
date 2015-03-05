@@ -49,15 +49,14 @@ global:
   interface: shell
   vars:
     cd: ls
+  expect:
+    regex: True
 
 cmd:
   send:
     content: cd /;
   print_response:
-  show_args:
   expect:
     array:
       - (?i)HOME
-    regex: True
-
     

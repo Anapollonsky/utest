@@ -1,27 +1,16 @@
 #!/usr/bin/env python
-import os
-import inspect
-import re
-
-import sys
 import argparse
-
-
-print(os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))))
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))))
-
 import yaml_parser as pa
 import utils as ut
-import functions.functions as fu
 from conman import Conman
-from frame import Frame
 from copy import deepcopy
+from frame import Frame
 
-VERSION = 1 
+VERSION = 1
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("-f", "--file", help="ARD546 command list file", default = None)
+parser.add_argument("file", help="ARD546 command list file")
 parser.add_argument("-a", "--address", help="target address", default = None)
 parser.add_argument("-v", "--verbose", help="increase output verbosity", default = 0, action="count")
 parser.add_argument("-r", "--repeat", help="set repetitions", default = 1, type=int)
@@ -70,14 +59,6 @@ def parse_block(block, command_queue, conman):
     else:
         conman.ferror("Unexpected top-level name \"" + block.keys()[0] + "\" encountered.")
  
-def assign_function_attributes(Frame, conman):
-    """Assign default attributes to all functions in functions.py"""
-    functions = [method for name, method in Frame.__dict__.items() if (callable(method) and hasattr(method, "priority"))]
-    for func in functions:
-        for attr in Frame.default_func_attrs:
-            if not hasattr(func, attr):
-                setattr(func, attr, Frame.default_func_attrs[attr])
-
 def parse_command_queue (conman, queue):
     """Parse a "queue" (list,str) containing blocks to be executed and filename. Works recursively, on nested 'queues'."""
     conman.message(3, "Entering \"" + queue[1] + "\"")
@@ -91,23 +72,17 @@ def parse_command_queue (conman, queue):
     conman.message(3, "Leaving \"" + queue[1] + "\"")    
     
 if __name__ == "__main__":
-
     args = parser.parse_args()
     conman = Conman(args.verbose)    
-    if args.file:
-        instream = open(args.file)
-    elif not sys.stdin.isatty():
-        instream = sys.stdin
-    else:
-        conman.ferror("No input stream found.")
-    command_queue_base = pa.parse_yaml(instream, conman)        
-
-    assign_function_attributes(Frame, conman)
+    in_stream = open(args.file)
+    command_queue_base = pa.parse_yaml(in_stream, conman)        
+    ut.assign_function_attributes(Frame, conman)
+    
     if args.address:
         conman.global_permanent["address"] = args.address
     if args.log:
         conman.global_permanent["log"] = args.log
-             
+
     iteration = 1
     while(iteration <= args.repeat):
         conman.message(4, "Beginning Iteration " + str(iteration) + " of " + str(args.repeat) + "...") 
@@ -115,5 +90,6 @@ if __name__ == "__main__":
         parse_command_queue(conman, (command_queue, args.file))
         conman.message(4, "Iteration " + str(iteration) + " Completed")
         iteration += 1
-        
+
     conman.closeallconnections()
+

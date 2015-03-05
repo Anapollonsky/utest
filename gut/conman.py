@@ -18,13 +18,14 @@ class Conman:
             for name, obj in inspect.getmembers(module):
                 if inspect.isclass(obj) and hasattr(obj, "interfacename"):
                     interfaces.append(obj)
+                    ut.assign_function_attributes(obj, self)
         interfaces = list(set(interfaces))
         return interfaces
                 
     def __init__(self, trace):
         self.connections = []        
         self.trace_level = trace
-        self.updateterminal()
+        self.update_terminal()
         self.storage = {}
         self.global_permanent = {"capture": None, "connect": None}        
         self.interfaces = self.importinterfaces()
@@ -33,34 +34,37 @@ class Conman:
     def openconnection(self, frame):
         """Open a connection to target and return, or return existing connection."""
         # Get list of arguments, excluding 'self'.
-        connect_args = inspect.getargspec(frame.establishConnection).args[1:]
-
+        argspec = inspect.getargspec(frame.establish_connection)
+        args = argspec.args[1:]
+        defaults = argspec.defaults or []
+        
         # Verify that all expected arguments are present
-        for arg in connect_args + ["interface"]:
-            if not hasattr(frame, arg):
-                self.ferror("Expected connection argument \"" + arg + "\" not set.")                
-                
+        covered_indices = [args.index(x) for x in args if hasattr(self, '_' + x)]
+        remaining_args = [x for x in args if args.index(x) not in covered_indices] # leftover arguments to be filled 
+        remaining_defaults = [x for x in defaults if defaults.index(x) - (len(args) - len(defaults)) not in covered_indices] # leftover defaults
+        if len(remaining_args) > len(remaining_defaults):
+            self.terror("Not enough arguments for connection, expected " + str(args) + ", available defaults " + str(defaults)) 
             
         # If the connection with identical connection specifications exists, return it.
         for connection in self.connections: 
             connection_exists = True            
-            for arg in connect_args + ["interface"]:
-                if not ((arg in connection.args) and getattr(frame, arg)[arg] == connection.args[arg]):
+            for arg in args + ["interface"]:
+                if not ((arg in connection.args) and getattr(frame, '_' + arg) == connection.args[arg]):
                     connection_exists = False
             if connection_exists:
-                return connection
+                return connection 
             
         # Populate dictionary to insert as arguments to connection function
         arg_dict = {}        
-        for arg in connect_args:
-            if hasattr(frame, arg):                    
-                arg_dict[arg] = getattr(frame, arg)[arg]
+        for arg in args:
+            if hasattr(frame, '_' + arg):                    
+                arg_dict[arg] = getattr(frame, '_' + arg)
 
          # Check if the interface exists, and if it does, use it to connect
         connection_found = False
         for interface in self.interfaces:
             if hasattr(interface, "interfacename") and interface.interfacename == frame._interface:
-                conn = frame.establishConnection(**arg_dict)
+                conn = frame.establish_connection(**arg_dict)
                 connection_found = True
                 break
         if not connection_found:
@@ -126,7 +130,7 @@ class Conman:
 
     ## Miscellaneous
     
-    def updateterminal(self):
+    def update_terminal(self):
         self.terminal = {}
         self.terminal["rows"], self.terminal["cols"] = ut.getTerminalSize()
 

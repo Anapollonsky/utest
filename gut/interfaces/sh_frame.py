@@ -5,23 +5,22 @@ from frame import Frame
 class sh_Frame(Frame):
     interfacename = "shell"    
     
-    def establishConnection(self):
+    def establish_connection(self, shell = "sh"):
         """ Connection procedure for remote shell."""
         try:
-            con = pexpect.spawn("sh")
+            con = pexpect.spawn(shell)
         except:
             return None
         con.sendline("PS1=\>; export PS1")
         con.expect("export PS1")
         return con
 
-    def sendframe(self):
+    def send_frame(self):
         """Transmit a frame object's content to intended recipient."""
         self._connection.sendline(self._send)
         self._connection.expect([">", pexpect.TIMEOUT], timeout=1)        
 
-
-    def expectmessage(self, array, timer):
+    def expect_message(self, array, timer):
         """Wait for a message from an array, return either a capture or a timeout."""
         results = self._connection.expect([pexpect.TIMEOUT] + array, timeout = timer)
         if results == 0:
@@ -29,8 +28,7 @@ class sh_Frame(Frame):
         else:
             return ((self._connection.before + self._connection.after).decode("utf-8"), False) # Return capture, no timeout
         
-
-    def capturemessage(self):
+    def capture_message(self):
         """Try to capture text without an "expect" clause."""
         time.sleep(.1)
         try:
@@ -39,3 +37,14 @@ class sh_Frame(Frame):
         except:
             read_value = ""
         return read_value.decode("utf-8")
+
+
+################################################################################
+#################### Command functions
+
+    def shell(self, shell = 'sh'):
+        """Used to set the shell, if any."""
+        self._shell = shell
+    shell.priority = 0
+    shell.quiet = True
+    
