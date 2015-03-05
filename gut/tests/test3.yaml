@@ -52,6 +52,7 @@ global:
 cmd:
   send: ls; cd /; ls;
   print_response:
+  show_args:
   expect:
     - interfaces
     - functions

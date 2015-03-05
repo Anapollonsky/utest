@@ -56,8 +56,6 @@ class Frame(object):
             else:
                 func_args = deepcopy(self.args[func.__name__])
 
-            # print(func_args)
-            # print(func.defaults)
             if isinstance(func_args, dict):
                 ut.recursive_dict_merge(func_args, func.defaults)
 
@@ -103,6 +101,10 @@ class Frame(object):
                 string = re.sub(variable, str(self._vars[variable]), string)
         return string
 
+    def hook_show_args(self, string):
+        if hasattr(self, "_show_args"):
+            self.conman.message(1, "Argument: \"" + string + "\"")
+        return string
 ################################################################################
 #################### Callable functions
 
@@ -112,19 +114,25 @@ class Frame(object):
         pass
     interface.priority = 0
     interface.quiet = False
+    interface.hooks = [hook_show_args]
 
     def send(self, content):
         """Send the frame."""
         self._send = content
         self.sendframe()
     send.priority = 4
-    send.hooks = [hook_var_replace]
+    send.hooks = [hook_var_replace, hook_show_args]
+
+    def show_args(self):
+        self._show_args = True
+    show_args.priority = 0
 
     def capture(self):
         """Capture some data."""
         self.addresponse(self.capturemessage())
     capture.priority = 7
     capture.quiet = False
+    capture.hooks = [hook_show_args]
 
     def connect(self):
         """Used to initiate the connection."""
@@ -132,28 +140,23 @@ class Frame(object):
     connect.priority = 1
     connect.quiet = False
 
+    def print_response(self):
+        self.conman.message(1, self.responses)
+    print_response.priority = 100
+    
     
     def timeout(self, timeout):
         self._timeout = timeout
         """Used to set the timeout variable, used by expect and expect_regex"""
         pass
     timeout.priority = 0
+    timeout.hooks = [hook_show_args]
 
     def print_time(self, formatting="%H:%M:%S"):
         """High-priority time-print function. Optional argument specifies formatting."""
         self.conman.message(1, strftime(formatting, gmtime()))
     print_time.priority = 0
-
-    def print_response(self):
-        """Low-priority function that prints the captured response to the sent message."""
-        self.conman.message(1, "\n" + str(self.responses) + "\n")
-    print_response.priority = 100    
-
-
-    def print_send(self):
-        """Low-priority function that prints the sent message."""
-        self.conman.message(1, "\n" + str(self.send["content"]) + "\n")
-    print_send.priority = 100    
+    print_time.hooks = [hook_show_args]
 
     def log(self, filename):
         """Low-priority function to log the sent and received messages to a given file."""
@@ -164,7 +167,8 @@ class Frame(object):
         infile.write(self.send["content"] + "\n\n" + self.responses + "\n\n")
         infile.close()
     log.priority = 100
-    log.quiet = True
+    log.hooks = [hook_show_args]
+    log.quiet = False
 
     def reject(self, array):
         """Throw an error if any string in list-argument is present in given frame's responses."""
@@ -175,6 +179,7 @@ class Frame(object):
             if re.search(re.escape(str(array)), self.responses):
                 self.conman.terror(["Captured rejected regex substring in response:" + array.strip(), self.responses])                            
     reject.priority = 8
+    reject.hooks = [hook_show_args]
 
     def reject_regex(self, array):
         """Throw an error if any regex in list-argument is present in given frame's responses."""
@@ -185,10 +190,10 @@ class Frame(object):
             if re.search(str(array), self.responses):
                 self.conman.terror(["Captured rejected regex substring in response:" + array.strip(), self.responses]) 
     reject_regex.priority = 8
+    reject_regex.hooks = [hook_show_args]
 
     def expect(self, array):
         """Try and capture everything in array before time runs out."""
-        print(array)
         diminishing_expect = [re.escape(x) for x in array]
         timer = self._timeout if hasattr(self, "_timeout") else 10
         if hasattr(self, "responses"):
@@ -213,7 +218,8 @@ class Frame(object):
                 self.conman.message(1, "Captured in response: " + k.strip())
         self._timeout = {"timeout": timer}
     expect.priority = 6
-
+    expect.hooks = [hook_var_replace, hook_show_args]
+    
     def expect_regex(self, array):
         """Try and capture everything in array before time runs out."""
         diminishing_expect = array
@@ -240,7 +246,7 @@ class Frame(object):
             self.addresponse(capture)
         self._timeout = {"timeout": timer}
     expect_regex.priority = 6
-
+    expect_regex.hooks = [hook_var_replace, hook_show_args]
 
     def store_regex(self, regexes):
         """Capture regexes in responses and store in the storage dictionary. Accepts lists and strings."""
@@ -257,6 +263,7 @@ class Frame(object):
         elif isinstance(regexes, str):
             store_regex_single(self, regexes)
     store_regex.priority = 10
+    store_regex.hooks = [hook_var_replace, hook_show_args]
 
     def check_regex(self, regexes):
         """Verify that the regexes extracted in the current frame match those stored with store_regex.
@@ -271,7 +278,6 @@ class Frame(object):
                 else:
                     self.conman.message(1, "Regex \"" + regex + "\" matches: \"" + str(match.groups()) + "\"")
             else:
-                print (self.responses)
                 self.conman.terror(["Expected regex " + regex + " not present in captured self.", self.responses]) 
         if isinstance(regexes, list):
             for regex in regexes:
@@ -279,9 +285,12 @@ class Frame(object):
         else:
             check_regex_single(self, regexes)
     check_regex.priority = 12
+    check_regex.hooks = [hook_var_replace, hook_show_args]
 
-    def vars(self, variables):
+    def vars(self, dict):
         """Replaces all instances of one substring with another."""
-        self._vars = variables
+        self._vars = dict
     vars.priority = 0
+    vars.hooks = [hook_show_args]
+
     
