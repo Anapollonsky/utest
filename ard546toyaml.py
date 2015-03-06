@@ -2,15 +2,16 @@
 import re
 import copy
 import yaml
+import argparse
+import sys
 
 infile = "../../tmplog_"
-outfile = "../out.yaml"
 re.DOTALL
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("file", help="file containing ARD546 commands to scrape")
-
+args = parser.parse_args()
 
 ## Populate dictionary of frames
 
@@ -22,7 +23,7 @@ frames = {"GETRESPONSE":[],
               "ACTION":[],
               "ACTIONACK":[]} 
 
-filecontents = open(infile, 'r').read()
+filecontents = open(args.file, 'r').read()
 for frametype in frames:
     frames[frametype] = re.findall("\[.*" + frametype + " .*\]", filecontents)
 
@@ -78,14 +79,14 @@ def reformatexpect(pair):
 
 sortedpairs = [reformatsend(pair) for pair in sortedpairs]
 sortedpairs = [reformatexpect(pair) for pair in sortedpairs]
-print sortedpairs[0]
+
 ##Write out to YAML
 framelist = [{"global": {"interface":"ard546"}}]
 
 for pair in sortedpairs:
-    framelist.append({"cmd":{"send": pair[0], "expect_regex": [pair[1]], "print_send": None}})
+    framelist.append({"cmd":{"send": pair[0], "expect": {"array": [pair[1]], "regex": True}, "print_send": None}})
 
-outwrite = open(outfile, "w")
+# outwrite = open(outfile, "w")
 
 for frame in framelist:
-    yaml.dump(frame, outwrite)
+    yaml.dump(frame, sys.stdout)

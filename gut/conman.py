@@ -8,27 +8,36 @@ import utils as ut
 
 class Conman:
     """Singleton class responsible for tracking program state."""
-
-    def importinterfaces(self):
-        """Import valid interfaces from gutdir/interfaces"""
-        for file in glob.glob(os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) + "/interfaces/", "*.py")):
-            filename = os.path.splitext(os.path.basename(file))[0]
-            module = importlib.import_module('interfaces.' + filename)
-            interfaces = []
-            for name, obj in inspect.getmembers(module):
-                if inspect.isclass(obj) and hasattr(obj, "interfacename"):
-                    interfaces.append(obj)
-                    ut.assign_function_attributes(obj, self)
-        interfaces = list(set(interfaces))
-        return interfaces
-                
+        
     def __init__(self, trace):
         self.connections = []        
         self.trace_level = trace
         self.update_terminal()
         self.storage = {}
         self.global_permanent = {"capture": None, "connect": None}        
-        self.interfaces = self.importinterfaces()
+        self.interfaces = []
+
+
+    def get_interface(self, name):
+        """Import specific interface from /interfaces"""
+
+        # Check if it's already stored
+        for interface in self.interfaces:
+            if interface.interfacename == name:
+                return interface
+            
+        # Try and find it if not
+        for file in glob.glob(os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) + "/interfaces/", "*.py")):
+            filename = os.path.splitext(os.path.basename(file))[0]
+            module = importlib.import_module('interfaces.' + filename)
+            for interfacename, interface in inspect.getmembers(module):
+                if inspect.isclass(interface) and hasattr(interface, "interfacename") and interface.interfacename == name:
+                    self.interfaces.append(interface)
+                    ut.assign_function_attributes(interface, self)
+                    self.message(2, "Found interface \"" + name + "\"")
+                    return interface
+
+        self.ferror("Unable to find interface \"" + name + "\"")        
         
     ## Connection Management    
     def openconnection(self, frame):
@@ -39,8 +48,8 @@ class Conman:
         defaults = argspec.defaults or []
         
         # Verify that all expected arguments are present
-        covered_indices = [args.index(x) for x in args if hasattr(self, '_' + x)]
-        remaining_args = [x for x in args if args.index(x) not in covered_indices] # leftover arguments to be filled 
+        covered_indices = [args.index(x) for x in args if hasattr(frame, '_' + x)]
+        remaining_args = [x for x in args if args.index(x) not in covered_indices] # leftover arguments to be filled
         remaining_defaults = [x for x in defaults if defaults.index(x) - (len(args) - len(defaults)) not in covered_indices] # leftover defaults
         if len(remaining_args) > len(remaining_defaults):
             self.terror("Not enough arguments for connection, expected " + str(args) + ", available defaults " + str(defaults)) 
@@ -60,15 +69,7 @@ class Conman:
             if hasattr(frame, '_' + arg):                    
                 arg_dict[arg] = getattr(frame, '_' + arg)
 
-         # Check if the interface exists, and if it does, use it to connect
-        connection_found = False
-        for interface in self.interfaces:
-            if hasattr(interface, "interfacename") and interface.interfacename == frame._interface:
-                conn = frame.establish_connection(**arg_dict)
-                connection_found = True
-                break
-        if not connection_found:
-            self.ferror("Unable to find interface \"" + frame._interface + "\"")
+        conn = frame.establish_connection(**arg_dict)
         if conn == None:
             self.ferror("Unable to establish a connection to interface \"" + frame._interface + "\" with arguments " + str(arg_dict))
         else: 

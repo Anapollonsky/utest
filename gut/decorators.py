@@ -1,7 +1,8 @@
-def command(priority, hooks = {}):
+def command(priority, hooks = {}, quiet = False):
     def decorator(func):
         func.priority = priority
         func.hooks = hooks
+        func.quiet = quiet
         return func
     return decorator
 

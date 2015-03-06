@@ -89,7 +89,8 @@ class Frame(object):
             else:
                 func_args = deepcopy(self.args[func.__name__])
 
-            self.conman.message(2, "Running " + func.__name__)
+            if func.quiet == False:
+                self.conman.message(2, "Running " + func.__name__)
             
             for arg in func_args:
                 if isinstance(func.hooks, dict) and (arg in func.hooks):
@@ -144,7 +145,7 @@ class Frame(object):
 ################################################################################
 #################### Command Functions
 
-    @command(0, [hook_show_args])
+    @command(0, [hook_show_args], quiet = True)
     def interface(self, interface):
         """Used to set the connection interface. """
         self._interface = interface
@@ -160,13 +161,13 @@ class Frame(object):
     def show_args(self):
         self._show_args = True
 
-    @command(7, [hook_show_args])
+    @command(7, [hook_show_args], quiet=True)
     def capture(self):
         """Capture some data."""
         self._response += self.capture_message()
         # self.insertFunctionWithPriority(self.capture, self.print_response)
 
-    @command(1)
+    @command(1, quiet=True)
     def connect(self):
         """Used to initiate the connection."""
         self._connection = self.conman.openconnection(self) 
@@ -175,6 +176,10 @@ class Frame(object):
     def print_response(self):
         self.conman.message(1, self._response)
 
+    @command(5)
+    def print_send(self):
+        self.conman.message(1, self._send)
+        
     @command(0, [hook_show_args])
     def timeout(self, timeout):
         """Used to set the timeout variable, used by expect and expect_regex"""        
@@ -192,7 +197,7 @@ class Frame(object):
             infile = open(filename, 'a')
         except IOError:
             self.conman.ferror("Failed to open file " + filename + " for logging.")
-        infile.write(self.send["content"] + "\n\n" + self._response + "\n\n")
+        infile.write(self._send + "\n\n" + self._response + "\n\n")
         infile.close()
 
     @command(8, [hook_show_args])
@@ -286,7 +291,7 @@ class Frame(object):
     def wait_after_send(self, wait_time):
         time.sleep(wait_time)
 
-    @command(-1, [hook_show_args])
+    @command(100, [hook_show_args])
     def wait_after_send(self, wait_time):
-        time.sleep(wait_time)        
+        time.sleep(wait_time) 
         

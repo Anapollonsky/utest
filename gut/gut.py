@@ -37,16 +37,9 @@ def parse_command(local_settings, conman):
     ut.recursive_dict_merge(local_settings, conman.global_temporary)
     
     # Construct appropriate frame based on interface
-    for interface in conman.interfaces:
-        if interface.interfacename == local_settings["interface"]:
-            frame = interface(local_settings, conman)
-            break
-        else:
-            frame = None
-    if frame == None:
-        conman.ferror("Interface " + local_settings["interface"] + " not found.")
-    else:
-        frame.perform_actions()
+    interface = conman.get_interface(local_settings["interface"])
+    frame = interface(local_settings, conman)
+    frame.perform_actions()
     
 def parse_block(block, command_queue, conman):
     """Delegate actions based on top-level block type."""

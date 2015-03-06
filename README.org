@@ -6,9 +6,15 @@
 #+HTML_HEAD: "<style type="text/css">.org-src-container{ background-color: #181830; color: #DDDDFF; font-size: 130%} </style>"
 #+OPTIONS: title:nil ^:nil
 #+BIND: org-latex-title-command ""
-* GUT Documentation
+* GUT Documentation V1
 ** About
-GUT is a flexible testing platform, particularly well suited for testing inferior hardware over a telnet or ssh connection. GUT provides a flexible framework that allows for easy expansion by the user of existing functionality, while providing a simple, YAML-formatted syntax for running tests.
+GUT is a testing platform, particularly well suited for testing inferior hardware over a telnet or ssh connection. GUT provides a flexible framework that allows for easy expansion by the user of existing functionality, while providing a simple, YAML-formatted syntax for running tests.
+
+GUT has a simple structure. Tests are written in YAML format and are passed to the program. Tests specify a sequence, in which each member consists of an /interface/ and a set of /command functions/. An /interface/ is a class that specifies several procedures; a connection procedure, a procedure to send a message, a procedure to read the response, etc. As of the time of writing, there are four included interfaces with GUT: BCI, ARD546, Telnet, and Shell. "BCI", "ARD546" and "Telnet" open a telnet connection over a specified port to a target, whereas "Shell" runs the "sh" process locally.  
+
+/Command functions/ are actions that are performed for every entry in the sequence. They range from something as simple as setting a connection variable (Setting the username used during login, for example), to actually sending data over the interface or parsing the response. /Command functions/ are generally interface-independent, simple to write, and are always executed in a deterministic order.
+
+These two abstractions provide GUT with the flexibility to be used to develop sophisticated, top-level tests for various systems. GUT comes with one python library requirement, PyYaml, to facilitate parsing the YAML file. In addition the "Shell" interface requires the Pexpect library to be installed; unfortunately, Pexpect doesn't work with Windows, and so running GUT on Windows requires hiding the file associated with the "Shell" interface.
 
 ** Usage
 This section will give a brief introduction to writing proper YAML files for GUT with the default YAML parser.
@@ -43,7 +49,7 @@ cmd:
 
 The =cmd= block is responsible for sending data over an interface and performing analysis on the results. Each =cmd= block is a dictionary that maps "command functions" to their arguments. In the example above, =username= is a function with the argument "lucent", =wait_after_send= is a function with the argument 0.5, and =print_response= is a function with no argument. The order in which these functions appear in a block has no effect on how the block is executed; instead, these functions are run in an order determined by the /priority/ of the function. The priority of a function is a hardcoded numerical value assigned to each function; the higher the priority, the lower the priority-number, the earlier the function will be run in each block. 
 
-In addition to the commands above, there are some commands functions which are dynamically included due to the command-line arguments. For example, in the block above, you see that there is no specification of the address of the target. This is because the GUT command-line argument =--address= was used to set the address. This value is used as the default, but it can be overwritten by manually inserting an =address: localhost= entry or similar in a block. Similarly, there are two commands which are always inserted and hidden: =connect= and =capture=. The =connect= command function has a priority such that it is run after all connection parameters, such as "interface", "username" and "password", have been set. It opens a connection to the desired target, or returns an existing one if a previous command had already opened one. The =capture= command, on the other hand, is used to try and capture any responses from the target.
+In addition to the commands above, there are some commands functions which are dynamically included due to the command-line arguments. For example, in the block above, you see that there is no specification of the address of the target. This is because the GUT command-line argument =--address= was used to set the address. This value is used as the default, but it can be overwritten by manually inserting an =address: localhost= entry or similar in a block. Similarly, there are two commands which are always inserted and hidden: =connect= and =capture=. The =connect= command function has a priority such that it is run after all connection parameters, such as "interface", "username" and "password", have been set. It opens a connection to the desired target, or returns an existing one if a previous command had already opened one. The =capture= command, on the other hand, is used to capture any responses from the target.
 
 With these modifications (and if the command was run with =--address localhost=), the block above is also thus equivalent to:
 
@@ -80,12 +86,18 @@ cmd:
     arg1: blah
     arg2: bloo
 #+END_SRC
-=fake_function= above is a function that accepts two arguments. The names "arg1" and "arg2" are expected to be exactly the same as the actual argument names of fake_function, wherever it is defined; the order in which they appear, on the other hand, doesn't matter. This example demonstrates how GUT actually interprets these blocks. Consider the block below:
+=fake_function= above is a function that accepts two arguments. The names "arg1" and "arg2" are expected to match the actual argument names of fake_function, wherever it is defined; the order in which they appear, on the other hand, doesn't matter. This example demonstrates how GUT actually interprets these blocks. Consider the block below:
 #+BEGIN_SRC yaml
 cmd:
   send: blahblah
 #+END_SRC
-The parser assumes that because the value assigned to the function =send= is not a dictionary of arguments, it is instead a singular argument. When the function is called, this singular argument is directly inserted in the function. This "optimization" makes it easier to write concise tests, but it also makes no sense for functions that expect more than a single argument.
+The parser assumes that because the value assigned to the function =send= is not a dictionary of arguments, it is instead a singular argument. When the function is called, this singular argument is directly inserted in the function. This "optimization" makes it easier to write concise tests, but it also makes no sense for functions that expect more than a single argument. The short block above is expanded by the parser directly to the following:
+#+BEGIN_SRC yaml
+cmd:
+  send: 
+    content: blahblah
+#+END_SRC
+Here, "content" is the name of the argument of the =send= function.
 
 *** Complicated Example
 Below is an example of a more complicated test, showing the flexibility of GUT.
@@ -127,7 +139,7 @@ cmd:
 #+END_SRC
 What is this test doing? The first =global= block specifies several options to be used for the subsequent BCI commands: =interface=, =username= and =password=. It also specifies a =send= function, which means that for every subsequent =cmd= block, the message being sent will stay the same. Lastly, due to the =reject= command function, if, in the subsequent messages, the substring "error" occurs in the responses, GUT will throw an error.
 
-Next are two =cmd= blocks. They both specify different board addresses, and one specifies =store_regex=, and the other specifies =check_regex=. The =store_regex= scans the response from the target for an expression matching the regex, and stores multiple values which match the sections within parentheses. The =check_regex= function, on the other hand, does the same thing, except that instead of storing it, it compares with existing stored values. Thus, this test checks whether the captured FPGA version, CPLD Version and HwVersion are identical for both targets. In order to use these commands (and, indeed, understand the terminology), it is strongly recommended that the user be familiar with regular expressions. 
+Next are two =cmd= blocks. They both specify different board addresses, and one specifies =store_regex=, and the other specifies =check_regex=. The =store_regex= scans the response from the target for an expression matching the regex, and stores multiple values which match the sections within parentheses. The =check_regex= function performs the same match, except that instead of storing it, it compares with existing stored values. Thus, this test checks whether the captured FPGA version, CPLD Version and HwVersion are identical for both targets, without requiring knowing in advance of what those versions are. In order to use these commands (and, indeed, understand the terminology), it is strongly recommended that the user be familiar with regular expressions. 
 
 The next =global= block specifies a new set of global settings that completely overwrites those introduced by the previous =global= block. The subsequent commands are now sent over the ard546 interface to the target at 135.112.98.30. Note that neither =username= or =password= are specified; they are unneeded for the ard546 interface.
 
@@ -183,7 +195,7 @@ There are many built-in command functions. The table below lists these. In addit
 | interface        | Set connection interface                                                                                                        |        0 | Yes       | Yes    | base_funcs.py  |
 | address          | Set connection address                                                                                                          |        0 | Yes       | Yes    | base_funcs.py  |
 | connect          | Use the available parameters to establish a connection. Automatically added to every frame.                                     |        1 | Yes       | Yes    | base_funcs.py  |
-| capture          | Wait for a short period of time, and capture any incoming text. Automatically added to every frame.                             |        7 | Yes       | Yes    | base_funcs.py  |
+| capture          | Capture any incoming text. Automatically added to every frame.                                                                  |        7 | Yes       | Yes    | base_funcs.py  |
 | timeout          | This controls how long the expect and expect_regex functions wait before returning a failure. If omitted, set to ten.           |        0 | No        | Yes    | base_funcs.py  |
 | expect           | Ensure that every string in a given list of strings is captured.                                                                |        6 | No        | No     | regex_funcs.py |
 | reject           | Ensure that no string in a given list of strings is captured.                                                                   |        8 | No        | No     | regex_funcs.py |
@@ -197,7 +209,7 @@ There are many built-in command functions. The table below lists these. In addit
 | variable_replace | Accepts a dictionary as an argument. Substitutes each key for the value in the frame send, expect and reject strings.           |        1 | No        | No     | util_funcs.py  |
 | print_time       | Prints the time. Accepts an optional formatting argument.                                                                       |        0 | No        | No     | util_funcs.py  |
 | print_response   | Print the "responses" frame field.                                                                                              |      100 | No        | No     | util_funcs.py  |
-| log              | Append the "send" and the "responses" frame fields to a given filename.                                                         |      100 | No        | Yes    | util_funcs.py  |
+| log              | Append the "send" and the "responses" frame fields to a file specified by a provided filename.                                  |      100 | No        | Yes    | util_funcs.py  |
 |                  |                                                                                                                                 |          |           |        |                |
 
 ** Development
@@ -206,14 +218,14 @@ GUT is composed of several modules:
 + The main, or *gut.py*, is responsible for controlling program flow. 
 + The parser, *yaml_parser.py* by default, is responsible for reading a YAML file and converting it to a workable data structure.
 + Conman, in *conman.py*, is a singleton class that is used to transfer information between different parts of the program, handle messaging, and manage connections to different interfaces and addresses.
-+ The Frame class, in *frame.py*, is the base class on which all interfaces are based on. The Frame class is not dependent on any communication libraries, like pexpect or telnetlib; all such functionality is left to the interface subclass.
++ The Frame class, in *frame.py*, is the base class on which all interfaces are based on. The Frame class is not dependent on any communication libraries, like pexpect or telnetlib; all such functionality is left to the interface subclasses.
 + The interface subclasses are stored under */interfaces*. The subclasses extend the Frame class.
 + Command functions are stored under */functions*, with the entry-file being functions.py. The functions defined here are used to implement testing functionality.
 
-*** Adding a function
-As referred to here, a /function/ is a command that can be run inside a GUT command-block. GUT performs almost everything through these functions, for the purpose of architectural simplicity.
+*** Adding a command function
+As referred to here, a /command function/ is a command that can be run inside a GUT command-block. GUT performs almost everything through these functions, for the purpose of architectural simplicity.
 
-You must make sure that the function is available within the same namespace as */functions/function.py*. This means that the function should be defined either in *function.py* itself, or within another file whose contents are imported into function.py. You must manually specify the =priority= of the function, and you may specify the attributes =quiet= (which, if true, stops the function from being printed) and =required= (which would cause a fatal error if this function is not called by a frame); however, if the function =quiet= and =required= attributes are missing, they are automatically set to "False".
+Any added command function must be available within the same namespace as */functions/function.py*. This means that the function should be defined either in *function.py* itself, or within another file whose contents are imported into function.py. You must manually specify the =priority= of the function, and you may specify the attributes =quiet= (which, if true, stops the function from being printed) and =required= (which would cause a fatal error if this function is not called by a frame); however, if the function =quiet= and =required= attributes are missing, they are automatically set to "False".
 
 Below is sample code used for the =log= function. The first argument of every function must be used to pass the frame object itself, and subsequent arguments can be any other python object that can be interpreted by the parser. The passing of the frame object is handled by GUT itself, and every other argument is reliant on the testfile.
 
@@ -232,34 +244,36 @@ log.quiet = True
 
 Several things to note:
 + Perhaps confusingly, "high" priority corresponds to a low value the "priority" function attribute. A priority of 0 will be run very early in the process, whereas 100 will be run very late.
-+ Command functions are very flexible, and there are no restrictions on what code you put in them. Here, log is performing I/O operations. If you wanted to, you could write a function that does nearly anything -- the trick is to make it sufficiently easy to use and flexible that you actually want to use it.
++ Command functions are very flexible, and there are no restrictions on what code you put in them. Here, log is performing I/O operations. It's inefficient, because every single frame will be opening and closing the file, but it shouldn't be bottlenecking issue.
 
 *** Adding an interface
-Interfaces are objects that define a connection and how to perform certain operations on it -- how to connect, how to send data, how to receive data -- and are used to allow for connections to be more flexible. All interfaces are stored under */interfaces*, and they all inherit from /Frame/ in *frame.py*. This section will analyze an existing interface under *sh_frame.py*, which should make it trivial to write your own.
+Interfaces are objects that define a connection and how to perform certain operations on it -- how to connect, how to send data, how to receive data -- and are used to allow for connections to be more flexible. All interfaces are stored under */interfaces*, and they all inherit from /Frame/ in *frame.py*. This section will analyze an existing interface under *telnet_frame.py*, which should make it trivial to write your own.
 
 The header of the class includes any required objects, defines the class as inheriting from the /Frame/ class, and defines a class =interfacename=, which is the string that will be used by the rest of the program to differentiate between different interfaces. As such, the interfacename should be distinct from that of every other interface. Note that this particular interface uses telnetlib -- no code outside of the interfaces should know of the details of how the communication protocol works.
 #+BEGIN_SRC python
 import time
 import telnetlib
+import socket
 from frame import Frame
 
-class SH_Frame(Frame):
-    interfacename = "sh"    
+class telnet_Frame(Frame):
+    interfacename = "telnet"    
+
 #+END_SRC
 
-The /connect/ method is a static method that is used to establish a ready-to-use connection. It always accepts "address" as the first argument. /username/ and /password/ are optional arguments; in general, not all connections will need them. If they are defined where they are not accepted, an error will be thrown. Here, defaults are set for the connection, and so if they are not provided, the interface will attempt to connect with default username "lucent" and password "password". The interface returns a connection object that will be stored in conman, and used whenever another command wants to use the same interface.
+The /establishConnection/ method is a static method that is used to establish a ready-to-use connection. It always accepts "address" as the first argument. /username/ and /password/ are optional arguments; in general, not all connections will need them. If they are defined where they are not accepted, an error will be thrown. Here, defaults are set for the connection, and so if they are not provided, the interface will attempt to connect with default username "lucent" and password "password". The interface returns a connection object that will be stored in conman, and used whenever another command wants to use the same interface.
 #+BEGIN_SRC python
-    @staticmethod    
-    def establishConnection(address, username="lucent", password="password"):
+    def establishConnection(self, address, username, password):
         """ Connection procedure for remote shell."""
         try:
             con = telnetlib.Telnet(address, 23, 10)
         except socket.timeout:
-            return None        
+            return None
         con.expect(["ogin"])
         con.write(username + "\n")
         con.expect(["assword"])
         con.write(password + "\n")
+        time.sleep(.2)
         return con
 #+END_SRC
 
@@ -267,9 +281,7 @@ The /sendframe/ method accepts no arguments apart from /self/, and is responsibl
 #+BEGIN_SRC python
     def sendframe(self):
         """Transmit a frame object's content to intended recipient."""
-        connection = self.conman.openconnection(self.interface["interface"], self.address["address"])
-        connection.write(self.send["content"] + "\n")
-        return connection
+        self.connection.write(self.send["content"] + "\n")
 #+END_SRC
 
 The /expectmessage/ method accepts two arguments: an array, and a timer. The array is a list of regexes which are to be looked for, and the timer specifies when the expect operation times out. This method is needed for command functions "expect" and "expect_regex" to work. This method returns a tuple either =(None, True)= in the event of a timeout, or =(str, False)= in the event of a capture, where =str= is all the text leading up to the captured string, inclusive.
@@ -283,10 +295,10 @@ The /expectmessage/ method accepts two arguments: an array, and a timer. The arr
             return (results[2], False) # Return capture, no timeout
 #+END_SRC
 
-The /capturemessage/ method is used in lieu of the /expectmessage/ method for capturing text in the event that we don't know what string to expect. The method below simply waits a short period of time, and then returns all text that arrived during that period. 
+The /capturemessage/ method is used in lieu of the /expectmessage/ method for capturing text in the event that we don't know what string to expect. The method below simply waits a short period of time, and then returns all text that arrived during that period.
 #+BEGIN_SRC python
     def capturemessage(self):
         """Try to capture text without an "expect" clause."""
-        time.sleep(.1)
+        time.sleep(.4)
         return self.connection.read_very_eager()
 #+END_SRC
