@@ -278,3 +278,15 @@ class Frame(object):
         """Replaces all instances of one substring with another. Reliant on a hook"""
         self._vars = dict
     
+    @command(-1, [hook_show_args])
+    def wait_before(self, wait_time):
+        time.sleep(wait_time)
+
+    @command(5, [hook_show_args])
+    def wait_after_send(self, wait_time):
+        time.sleep(wait_time)
+
+    @command(-1, [hook_show_args])
+    def wait_after_send(self, wait_time):
+        time.sleep(wait_time)        
+        

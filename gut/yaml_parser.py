@@ -4,9 +4,7 @@ import utils as ut
 from frame import Frame
 
 # Symbol table. Used to map yaml-file names to internal names, when necessary
-sym = {
-       "var_def":"dict",
-}
+sym = {}
 
 def symbol_substitutions(input_string, symbols):
     """Perform substitutions in the string, replacing all 'values' from an external dictionary with the corresponding 'keys'."""
