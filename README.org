@@ -302,3 +302,17 @@ The /capturemessage/ method is used in lieu of the /expectmessage/ method for ca
         time.sleep(.4)
         return self.connection.read_very_eager()
 #+END_SRC
+
+* scpi
+
+** MXA
+*** Working:
+Center freq: :SENS:FREQ:CENT 1.94 GHz
+Make marker: CALC:MARK1:MODE POS
+Set marker frequency: CALC:MARK1:X 1.93 GHz
+
+*** Not Working:
+Read marker value: CALC:MARK2:Y?
+Calculate Peak: :CALC:DATA1:PEAK?
+
+
