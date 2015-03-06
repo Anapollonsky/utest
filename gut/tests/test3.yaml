@@ -51,7 +51,7 @@ global:
     cd: ls
   expect:
     regex: True
-
+    
 cmd:
   send:
     content: cd /;

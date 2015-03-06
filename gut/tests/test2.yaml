@@ -1,11 +1,12 @@
 global:
-  username: lucent
-  password: notpassword
   interface: telnet
 
 cmd:
+  username: lucent
+  password: password
+  address: 135.112.98.16
   send: pwd
   wait_after_send: .5
-  log: logs/test2log
+  log: ../logs/test2log
   print_response:
   
