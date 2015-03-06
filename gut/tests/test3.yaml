@@ -56,6 +56,9 @@ cmd:
   send:
     content: cd /;
   print_response:
+  reject:
+    array: (?i)root
+    regex: False
   expect:
     array:
       - (?i)HOME

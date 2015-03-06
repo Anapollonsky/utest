@@ -138,8 +138,9 @@ class Frame(object):
         if hasattr(self, "_show_args"):
             self.conman.message(1, "Argument: \"" + str(string) + "\"")
         return string
+
 ################################################################################
-#################### Callable functions
+#################### Command Functions
 
     @command(0, [hook_show_args])
     def interface(self, interface):
@@ -193,24 +194,19 @@ class Frame(object):
         infile.close()
 
     @command(8, [hook_show_args])
-    def reject(self, array):
+    def reject(self, array, regex = False):
         """Throw an error if any string in list-argument is present in given frame's responses."""
         if isinstance(array, list):
-            if any([re.search(k, self._response) for k in [re.escape(str(x)) for x in array]]):
-                self.conman.terror(["Captured rejected substring in response:" + k.strip(), self._response])
-        else:
-            if re.search(re.escape(str(array)), self._response):
-                self.conman.terror(["Captured rejected regex substring in response:" + array.strip(), self._response])                            
+            if regex == True and any([re.search(k, self._response) for k in [str(x) for x in array]]):
+                self.conman.terror(["Captured rejected regex in response:" + k.strip(), self._response])
+            elif regex == False and any([x in self._response for x in array]):
 
-    @command(8, [hook_show_args])
-    def reject_regex(self, array):
-        """Throw an error if any regex in list-argument is present in given frame's responses."""
-        if isinstance(array, list):
-            if any([re.search(str(k), self._response) for k in array]):
-                    self.conman.terror(["Captured rejected regex substring in response:" + k.strip(), self._response])
+                self.conman.terror(["Captured rejected substring in response:" + k.strip(), self._response])                
         else:
-            if re.search(str(array), self._response):
-                self.conman.terror(["Captured rejected regex substring in response:" + array.strip(), self._response]) 
+            if regex == True and re.search(str(array), self._response):
+                self.conman.terror(["Captured rejected regex in response:" + array.strip(), self._response])
+            elif regex == False and str(array) in self._response:
+                self.conman.terror(["Captured rejected substring in response:" + array.strip(), self._response])                
 
     @command(6, [hook_var_replace, hook_show_args])
     def expect(self, array, regex = False):
