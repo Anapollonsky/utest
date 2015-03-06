@@ -4,3 +4,9 @@ def command(priority, hooks = {}):
         func.hooks = hooks
         return func
     return decorator
+
+def hook(hook = True):
+    def decorator(func):
+        func.hook = True
+        return func
+    return decorator

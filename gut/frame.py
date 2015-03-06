@@ -4,7 +4,7 @@ import types
 import re
 import inspect
 import utils as ut
-from decorators import command
+from decorators import command, hook
 
 class Frame(object):
     """Representation of a sent/received frame."""
@@ -119,6 +119,7 @@ class Frame(object):
         
 ################################################################################
 #################### Hooks
+    @hook()
     def hook_var_replace(self, sequence):
         if hasattr(self, "_vars"):
             if isinstance(sequence, list): # if input is list, replace in every member
@@ -133,7 +134,8 @@ class Frame(object):
                 for variable in self._vars: # if input is anything else, replace as string
                     sequence = re.sub(variable, str(self._vars[variable]), str(sequence))
         return sequence
-
+    
+    @hook()
     def hook_show_args(self, string):
         if hasattr(self, "_show_args"):
             self.conman.message(1, "Argument: \"" + str(string) + "\"")
@@ -213,7 +215,7 @@ class Frame(object):
         """Try and capture everything in array before time runs out."""
         diminishing_expect = [re.escape(x) for x in array] if regex == False else array
         timer = self._timeout if hasattr(self, "_timeout") else 10
-        if hasattr(self, "responses"):
+        if hasattr(self, "_response"):
             for k in diminishing_expect[:]:
                 if re.search(k, self._response): 
                     diminishing_expect.remove(k)        
@@ -273,6 +275,6 @@ class Frame(object):
 
     @command(0, [hook_show_args])
     def vars(self, dict):
-        """Replaces all instances of one substring with another."""
+        """Replaces all instances of one substring with another. Reliant on a hook"""
         self._vars = dict
     
