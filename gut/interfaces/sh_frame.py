@@ -1,9 +1,9 @@
 import pexpect
 import time
-from frame import Frame
+from frame import Interactive_Frame
 from decorators import command
 
-class sh_Frame(Frame):
+class sh_Frame(Interactive_Frame):
     interfacename = "shell"    
     
     def establish_connection(self, shell = "sh"):

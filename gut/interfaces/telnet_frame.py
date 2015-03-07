@@ -1,10 +1,10 @@
 import time
 import telnetlib
 import socket
-from frame import Frame
+from frame import Interactive_Frame
 from decorators import command
 
-class telnet_Frame(Frame):
+class telnet_Frame(Interactive_Frame):
     interfacename = "telnet"    
 
     def establish_connection(self, address, username, password):

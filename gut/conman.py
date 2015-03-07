@@ -3,6 +3,7 @@ import glob
 import sys
 import inspect
 import importlib
+from colorama import Fore
 from frame import Frame
 import utils as ut
 
@@ -95,18 +96,25 @@ class Conman:
         pass
 
     def message1(self, content):
-        print("  > " +  content.strip())
+        prefix = " " * 8
+        outstr = content.strip().replace("\n", "\n" + prefix)
+        print(prefix[:-2] + Fore.CYAN + u"\u2771" + " " + Fore.RESET +  outstr)
         
     def message2(self, content):
-        print(content.strip())
-
+        prefix = " " * 6
+        outstr = content.strip().replace("\n", "\n" + prefix) 
+        print(prefix[:-2] + Fore.GREEN + u"\u2771" + " " + Fore.RESET + outstr) 
+        
     def message3(self, content):
-        instr = (" " + content.strip() + " ")
-        print(instr.center(max(len(instr) + 4, 46), "_").center(self.terminal["rows"], " "))
+        prefix = " " * 4
+        outstr = content.strip().replace("\n", "\n" + prefix) 
+        print(prefix[:-2] + Fore.YELLOW + u"\u2771" + " " + Fore.RESET +  outstr) 
 
-
+                        
     def message4(self, content):
-        print((" " + content + " ").center(self.terminal["rows"], "="))
+        prefix = " " * 2
+        outstr = content.strip().replace("\n", "\n" + prefix) 
+        print(prefix[:-2] + Fore.RED + u"\u2771" + " " + Fore.RESET + outstr) 
 
     message_functions = [message0, message0, message0, message1, message2, message3, message4]
     
@@ -115,12 +123,12 @@ class Conman:
         
     
     def ferror(self, content):
-        print((" " + "FATAL ERROR" + " ").center(self.terminal["rows"], "#"))
+        print(Fore.RED + (" " + "FATAL ERROR" + " ").center(self.terminal["rows"], "#")+ Fore.RESET)
         print(content.strip())
         sys.exit()
 
     def terror(self, content):
-        print(("  TEST ERROR  ").center(self.terminal["rows"], "#"))
+        print(Fore.RED + ("  TEST ERROR  ").center(self.terminal["rows"], "#") + Fore.RESET)
         if isinstance(content, str):
             print(content.strip())
         elif isinstance(content, list) and len(content) == 2:

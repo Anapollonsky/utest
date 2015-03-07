@@ -1,9 +1,25 @@
 global:
-  interface: telnet
+  interface: shell
   
 cmd:
-  send:
-    content: cd /log; ls; 
-  expect_regex:
+  send: ls /
+  expect:
+    - bin
+    - usr
+  show_args:
+  print_response:
+  print_send:
+  print_time:
+
+cmd:
+  send: ls /
+  expect:
     array:
-      - launch
+      - bin
+      - usr
+    regex: True
+  show_args:
+
+
+
+

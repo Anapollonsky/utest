@@ -98,14 +98,21 @@ class Frame(object):
                         func_args[arg] = hook(self, func_args[arg])
                 elif isinstance(func.hooks, list):
                     for hook in func.hooks:
-                        func_args[arg] = hook(self, func_args[arg])                            
-            func(**func_args)
+                        func_args[arg] = hook(self, func_args[arg])
+
+            ## Run function, with self as first argument for derived functions.
+            if not hasattr(func, 'derived'):
+                func(**func_args)
+            else:
+                func(self, **func_args)                
 
     def deriveFunctionWithPriority(self, function, priority, name=None):
         """Create a copy of an existing command function with a specified priority and optionally name"""
         newfunction = types.FunctionType(function.__code__, function.__globals__, name or function.__name__, function.__defaults__, function.__closure__)
         newfunction.priority = priority
         newfunction.hooks = function.hooks
+        newfunction.derived = True
+        newfunction.quiet = function.quiet
         return newfunction
                 
     def insertFunctionWithPriority(self, top_function, copied_function, args = {}, priority = None):
@@ -117,7 +124,84 @@ class Frame(object):
         self.functions.append(getattr(self, newfunc.__name__))
         self.functions.sort(key=lambda x: x.priority)
         self.args[newfunc.__name__] = args
+
+################################################################################
+#################### Hooks
+    @hook()
+    def hook_var_replace(self, sequence):
+        if hasattr(self, "_vars"):
+            if isinstance(sequence, list): # if input is list, replace in every member
+                for member in sequence:
+                    for variable in self._vars:
+                        member = re.sub(variable, str(self._vars[variable]), member)
+            elif isinstance(sequence, dict): # if input is dictionary, replace in every value
+                for member in sequence:
+                    for variable in self._vars:
+                        sequence[member] = re.sub(variable, str(self._vars[variable]), sequence[member])
+            else:
+                for variable in self._vars: # if input is anything else, replace as string
+                    sequence = re.sub(variable, str(self._vars[variable]), str(sequence))
+        return sequence
+    
+    @hook()
+    def hook_show_args(self, string):
+        if hasattr(self, "_show_args"):
+            self.conman.message(1, "Argument: \"" + str(string) + "\"")
+        return string
         
+
+################################################################################
+#################### Command Functions
+
+    @command(0, [hook_show_args], quiet = True)
+    def interface(self, interface):
+        """Used to set the connection interface. """
+        self._interface = interface
+
+    @command(0, quiet = True)
+    def show_args(self):
+        self._show_args = True
+
+    @command(1, quiet=True)
+    def connect(self):
+        """Used to initiate the connection."""
+        self._connection = self.conman.openconnection(self) 
+        
+    @command(0, [hook_show_args])
+    def timeout(self, timeout):
+        """Used to set the timeout variable, used by expect and expect_regex"""        
+        self._timeout = timeout
+
+    @command(0, [hook_show_args])
+    def print_time(self, formatting="%H:%M:%S"):
+        """High-priority time-print function. Optional argument specifies formatting."""
+        self.conman.message(1, time.strftime(formatting, time.gmtime()))
+
+    @command(100, [hook_show_args])
+    def log(self, filename):
+        """Low-priority function to log the sent and received messages to a given file."""
+        try:
+            infile = open(filename, 'a')
+        except IOError:
+            self.conman.ferror("Failed to open file " + filename + " for logging.")
+        infile.write(self._send + "\n\n" + self._response + "\n\n")
+        infile.close()
+
+    @command(0, [hook_show_args])
+    def vars(self, dict):
+        """Replaces all instances of one substring with another. Reliant on a hook"""
+        self._vars = dict
+
+    @command(-1, [hook_show_args])
+    def wait_before(self, wait_time):
+        time.sleep(wait_time)
+
+    @command(100, [hook_show_args])
+    def wait_after(self, wait_time):
+        time.sleep(wait_time) 
+        
+class Interactive_Frame(Frame):
+
 ################################################################################
 #################### Hooks
     @hook()
@@ -142,35 +226,20 @@ class Frame(object):
             self.conman.message(1, "Argument: \"" + str(string) + "\"")
         return string
 
+    
 ################################################################################
 #################### Command Functions
-
-    @command(0, [hook_show_args], quiet = True)
-    def interface(self, interface):
-        """Used to set the connection interface. """
-        self._interface = interface
-        pass
-
+    
     @command(4, [hook_var_replace, hook_show_args])
     def send(self, content):
         """Send the frame."""
         self._send = content
         self.send_frame()
 
-    @command(0)
-    def show_args(self):
-        self._show_args = True
-
     @command(7, [hook_show_args], quiet=True)
     def capture(self):
         """Capture some data."""
         self._response += self.capture_message()
-        # self.insertFunctionWithPriority(self.capture, self.print_response)
-
-    @command(1, quiet=True)
-    def connect(self):
-        """Used to initiate the connection."""
-        self._connection = self.conman.openconnection(self) 
 
     @command(100)
     def print_response(self):
@@ -180,26 +249,6 @@ class Frame(object):
     def print_send(self):
         self.conman.message(1, self._send)
         
-    @command(0, [hook_show_args])
-    def timeout(self, timeout):
-        """Used to set the timeout variable, used by expect and expect_regex"""        
-        self._timeout = timeout
-
-    @command(0, [hook_show_args])
-    def print_time(self, formatting="%H:%M:%S"):
-        """High-priority time-print function. Optional argument specifies formatting."""
-        self.conman.message(1, strftime(formatting, gmtime()))
-
-    @command(100, [hook_show_args])
-    def log(self, filename):
-        """Low-priority function to log the sent and received messages to a given file."""
-        try:
-            infile = open(filename, 'a')
-        except IOError:
-            self.conman.ferror("Failed to open file " + filename + " for logging.")
-        infile.write(self._send + "\n\n" + self._response + "\n\n")
-        infile.close()
-
     @command(8, [hook_show_args])
     def reject(self, array, regex = False):
         """Throw an error if any string in list-argument is present in given frame's responses."""
@@ -207,7 +256,6 @@ class Frame(object):
             if regex == True and any([re.search(k, self._response) for k in [str(x) for x in array]]):
                 self.conman.terror(["Captured rejected regex in response:" + k.strip(), self._response])
             elif regex == False and any([x in self._response for x in array]):
-
                 self.conman.terror(["Captured rejected substring in response:" + k.strip(), self._response])                
         else:
             if regex == True and re.search(str(array), self._response):
@@ -278,20 +326,6 @@ class Frame(object):
         else:
             check_regex_single(self, regexes)
 
-    @command(0, [hook_show_args])
-    def vars(self, dict):
-        """Replaces all instances of one substring with another. Reliant on a hook"""
-        self._vars = dict
-    
-    @command(-1, [hook_show_args])
-    def wait_before(self, wait_time):
-        time.sleep(wait_time)
-
     @command(5, [hook_show_args])
     def wait_after_send(self, wait_time):
         time.sleep(wait_time)
-
-    @command(100, [hook_show_args])
-    def wait_after_send(self, wait_time):
-        time.sleep(wait_time) 
-        

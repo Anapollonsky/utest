@@ -55,7 +55,7 @@ global:
 cmd:
   send:
     content: cd /;
-  print_response:
+  # print_response:
   reject:
     array: (?i)root
     regex: False

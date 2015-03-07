@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 import argparse
+import colorama
 import yaml_parser as pa
 import utils as ut
 from conman import Conman
 from copy import deepcopy
 from frame import Frame
+
+colorama.init()
 
 VERSION = 1
 
@@ -50,7 +53,7 @@ def parse_block(block, command_queue, conman):
     elif "cmd" in block: # new frame being defined
         parse_command(block["cmd"], conman)
     else:
-        conman.ferror("Unexpected top-level name \"" + block.keys()[0] + "\" encountered.")
+        conman.ferror("Unexpected top-level name \"" + list(block.keys())[0] + "\" encountered.")
  
 def parse_command_queue (conman, queue):
     """Parse a "queue" (list,str) containing blocks to be executed and filename. Works recursively, on nested 'queues'."""

@@ -1,10 +1,10 @@
 import time
 import telnetlib
 import socket
-from frame import Frame
+from frame import Interactive_Frame
 from decorators import command
 
-class ARD546_Frame(Frame):
+class ARD546_Frame(Interactive_Frame):
     interfacename = "ard546"    
 
     def establish_connection(self, address):

@@ -1,10 +1,10 @@
 import telnetlib
 import socket
 import time
-from frame import Frame
+from frame import Interactive_Frame
 from decorators import command
 
-class BCI_Frame(Frame):
+class BCI_Frame(Interactive_Frame):
     interfacename = "bci"
     
     def establish_connection(self, address, username, password):
