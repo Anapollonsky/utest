@@ -31,7 +31,6 @@ class sh_Frame(Interactive_Frame):
         
     def capture_message(self):
         """Try to capture text without an "expect" clause."""
-        time.sleep(.1)
         try:
             self._connection.expect([">", pexpect.TIMEOUT], timeout=1)
             read_value = self._connection.before

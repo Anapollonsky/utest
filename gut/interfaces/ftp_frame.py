@@ -67,4 +67,4 @@ class ftp_Frame(Frame):
         if binary:        
             self._connection.retrbinary('RETR %s' % filename, open(filename, 'wb').write)
         else:
-            self._connection.retrlines("STOR %s" % filename, open(filename, 'w').read) 
+            self._connection.retrlines("RETR %s" % filename, open(filename, 'w').write) 
