@@ -14,6 +14,7 @@ class Conman:
     def __init__(self, trace):
         self.connections = []        
         self.trace_level = trace
+        self.message_functions = self.create_message_functions(trace)
         self.update_terminal()
         self.storage = {}
         self.global_permanent = {"capture": None, "connect": None}        
@@ -92,21 +93,27 @@ class Conman:
             connection.close()
             del connection
 
-    def message(self, level, content):
-
-        # Messaging
-        def message0(content, spacing):
+    def create_message_functions(self, level):
+        """ Generate the functions that will be used for messaging. """
+        def message0(content):
             pass
 
         def message_color(content, spacing, color):
             outstr = spacing + color  + u"\u2771" + " " + Fore.RESET + content.strip().replace("\n", "\n" + spacing)
             return outstr
-        
-        message_function_list = [functools.partial(message_color, color = color) for color in [Fore.CYAN, Fore.GREEN, Fore.YELLOW, Fore.RED]]
+
+        message_properties = zip([Fore.GREEN, Fore.YELLOW, Fore.CYAN, Fore.RED], ['  ' * k for k in range(3, -1, -1)])
+        message_function_list = [functools.partial(message_color, color = color, spacing = spacing) for color, spacing in message_properties]
         used_messages = message_function_list[(3 - self.trace_level):]
-        message_functions = [message0] *  (4 - len(used_messages)) + used_messages 
-        spacing = 2 * ' ' * (4 - level)
-        outstr = message_functions[level - 1](content, spacing)
+        message_functions = [message0] *  (4 - len(used_messages)) + used_messages
+        return message_functions
+        # spacing = 2 * ' ' * (4 - level)
+
+
+            
+    def message(self, level, content):
+        
+        outstr = self.message_functions[level - 1](content)
         if outstr: print(outstr)
     
     def ferror(self, content):
