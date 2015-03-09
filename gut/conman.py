@@ -3,6 +3,7 @@ import glob
 import sys
 import inspect
 import importlib
+import functools
 from colorama import Fore
 from frame import Frame
 import utils as ut
@@ -97,23 +98,11 @@ class Conman:
         def message0(content, spacing):
             pass
 
-        def message1(content, spacing):
-            outstr = spacing + Fore.CYAN  + u"\u2771" + " " + Fore.RESET + content.strip().replace("\n", "\n" + spacing)
-            return outstr
-
-        def message2(content, spacing):
-            outstr = spacing + Fore.GREEN  + u"\u2771" + " " + Fore.RESET + content.strip().replace("\n", "\n" + spacing)
-            return outstr
-
-        def message3(content, spacing):
-            outstr = spacing + Fore.YELLOW  + u"\u2771" + " " + Fore.RESET + content.strip().replace("\n", "\n" + spacing)
-            return outstr
-
-        def message4(content, spacing):
-            outstr = spacing + Fore.RED  + u"\u2771" + " " + Fore.RESET + content.strip().replace("\n", "\n" + spacing)
+        def message_color(content, spacing, color):
+            outstr = spacing + color  + u"\u2771" + " " + Fore.RESET + content.strip().replace("\n", "\n" + spacing)
             return outstr
         
-        message_function_list = [message1, message2, message3, message4]
+        message_function_list = [functools.partial(message_color, color = color) for color in [Fore.CYAN, Fore.GREEN, Fore.YELLOW, Fore.RED]]
         used_messages = message_function_list[(3 - self.trace_level):]
         message_functions = [message0] *  (4 - len(used_messages)) + used_messages 
         spacing = 2 * ' ' * (4 - level)
