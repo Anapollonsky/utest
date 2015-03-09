@@ -91,35 +91,34 @@ class Conman:
             connection.close()
             del connection
 
-    # Messaging
-    def message0(self, content, spacing):
-        pass
-
-    def message1(self, content, spacing):
-        outstr = content.strip().replace("\n", "\n" + spacing)
-        print(spacing[:-2] + Fore.CYAN + u"\u2771" + " " + Fore.RESET +  outstr)
-        
-    def message2(self, content, spacing):
-        outstr = content.strip().replace("\n", "\n" + spacing) 
-        print(spacing[:-2] + Fore.GREEN + u"\u2771" + " " + Fore.RESET + outstr) 
-        
-    def message3(self, content, spacing):
-        outstr = content.strip().replace("\n", "\n" + spacing) 
-        print(spacing[:-2] + Fore.YELLOW + u"\u2771" + " " + Fore.RESET +  outstr) 
-
-    def message4(self, content, spacing):
-        outstr = content.strip().replace("\n", "\n" + spacing) 
-        print(spacing[:-2] + Fore.RED + u"\u2771" + " " + Fore.RESET + outstr) 
-
-
-    
     def message(self, level, content):
-        message_function_list = [self.message1, self.message2, self.message3, self.message4]
+
+        # Messaging
+        def message0(content, spacing):
+            pass
+
+        def message1(content, spacing):
+            outstr = spacing + Fore.CYAN  + u"\u2771" + " " + Fore.RESET + content.strip().replace("\n", "\n" + spacing)
+            return outstr
+
+        def message2(content, spacing):
+            outstr = spacing + Fore.GREEN  + u"\u2771" + " " + Fore.RESET + content.strip().replace("\n", "\n" + spacing)
+            return outstr
+
+        def message3(content, spacing):
+            outstr = spacing + Fore.YELLOW  + u"\u2771" + " " + Fore.RESET + content.strip().replace("\n", "\n" + spacing)
+            return outstr
+
+        def message4(content, spacing):
+            outstr = spacing + Fore.RED  + u"\u2771" + " " + Fore.RESET + content.strip().replace("\n", "\n" + spacing)
+            return outstr
+        
+        message_function_list = [message1, message2, message3, message4]
         used_messages = message_function_list[(3 - self.trace_level):]
-        message_functions = [self.message0] * (4 - len(used_messages)) + used_messages        
-        spacing = 2 * ' ' * (self.trace_level - level + 2)
-        # print (message_functions)  
-        message_functions[level - 1](content, spacing)
+        message_functions = [message0] *  (4 - len(used_messages)) + used_messages 
+        spacing = 2 * ' ' * (4 - level)
+        outstr = message_functions[level - 1](content, spacing)
+        if outstr: print(outstr)
     
     def ferror(self, content):
         print(Fore.RED + ("  FATAL ERROR  ").center(self.terminal["rows"], "#")+ Fore.RESET)
