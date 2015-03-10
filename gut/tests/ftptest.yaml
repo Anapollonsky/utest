@@ -1,0 +1,13 @@
+global:
+  interface: ftp
+
+cmd:
+  put: shtest.yaml
+  username: lucent
+  password: password
+
+cmd:
+  get: shtest_modified.yaml
+  username: lucent
+  password: password
+    

@@ -10,10 +10,12 @@ class Frame(object):
     """Representation of a sent/received frame."""
 
     default_func_attrs = {"hooks": {}}
+    global_permanent = {}
     
     def __init__(self, local_settings, conman):
         self._response = ""
         self.args = {}
+        ut.recursive_dict_merge(local_settings, self.__class__.global_permanent)
         
         def check_functions_exist(local_settings, functions, conman):
             """Verify that all the functions specified in local_settings can be found."""
@@ -202,6 +204,7 @@ class Frame(object):
         
 class Interactive_Frame(Frame):
 
+    global_permanent = {"capture": None, "connect": None}    
 ################################################################################
 #################### Hooks
     @hook()

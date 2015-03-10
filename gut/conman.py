@@ -15,12 +15,11 @@ class Conman:
         self.connections = []        
         self.trace_level = trace
         self.message_functions = self.create_message_functions(trace)
+        self.global_permanent = {}
         self.update_terminal()
         self.storage = {}
-        self.global_permanent = {"capture": None, "connect": None}        
         self.interfaces = []
-
-
+        
     def get_interface(self, name):
         """Import specific interface from /interfaces"""
 
@@ -107,10 +106,7 @@ class Conman:
         used_messages = message_function_list[(3 - self.trace_level):]
         message_functions = [message0] *  (4 - len(used_messages)) + used_messages
         return message_functions
-        # spacing = 2 * ' ' * (4 - level)
 
-
-            
     def message(self, level, content):
         
         outstr = self.message_functions[level - 1](content)

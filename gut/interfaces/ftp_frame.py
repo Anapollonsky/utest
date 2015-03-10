@@ -1,17 +1,20 @@
 import time
 import os
-import ftplib
+from ftplib import FTP
 import socket
 from frame import Frame
 from decorators import command
 
 class ftp_Frame(Frame):
-    interfacename = "ftp"    
-
+    interfacename = "ftp"
+    global_permanent = {"connect": None}
+    
     def establish_connection(self, address, username = None, password = None, port = "21"):
         """ Connection procedure for remote shell."""
         try:
-            con = FTP.FTP(address, timeout = 10).login(username, password)
+            
+            con = FTP(address, timeout = 10)
+            con.login(username, password)
         except:
             return None
         return con
@@ -57,9 +60,9 @@ class ftp_Frame(Frame):
     def put(self, filename, binary = True):
         """Transfer a file to the server. Binary mode by default."""
         if binary:
-            self._connection.storbinary("STOR %s" % filename, open(filename, 'rb').read)
+            self._connection.storbinary("STOR %s" % filename, open(filename, 'rb'))
         else:
-            self._connection.storlines("STOR %s" % filename, open(filename, 'r').read)            
+            self._connection.storlines("STOR %s" % filename, open(filename, 'r'))            
         
     @command(5) 
     def get(self, filename, binary = True):
