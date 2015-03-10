@@ -1,13 +1,17 @@
 global:
-  interface: ftp
-
-cmd:
-  put: shtest.yaml
   username: lucent
   password: password
 
 cmd:
-  get: shtest_modified.yaml
-  username: lucent
-  password: password
+  interface: ftp  
+  put: tests/shtest.yaml
+
+cmd:
+  interface: telnet
+  send: mv shtest.yaml shtest_modified2.yaml
+  
+cmd:
+  interface: ftp  
+  get: shtest_modified2.yaml
+  lcwd: /home/aapollon/
     

@@ -1,9 +1,13 @@
 import time
 import os
+import inspect
 from ftplib import FTP
 import socket
+import ntpath
 from frame import Frame
 from decorators import command
+
+
 
 class ftp_Frame(Frame):
     interfacename = "ftp"
@@ -47,22 +51,26 @@ class ftp_Frame(Frame):
         """Change working directory on target for frame duration."""
         old_directory = self._connection.pwd()        
         self._connection.cwd(directory)
-        self.insertFunctionWithPriority(self.rcwd, self.rcwd, {"directory": old_directory}, 100)
+
+        # self.insertFunctionWithPriority(self.rcwd, self.rcwd, {"directory": old_directory}, 100)
 
     @command(0)
     def lcwd(self, directory):
         """Change local working directory for frame duration."""
         old_directory = os.getcwd()
         os.chdir(directory)
-        self.insertFunctionWithPriority(self.lcwd, self.lcwd, {"directory": old_directory}, 100)
+        newlcwd = self.deriveFunctionWithPriority(self.lcwd, self.lcwd, 100)
+        if not hasattr(getattr(self, newlcwd.__name__), "derived"):
+            self.insertFunction(newlcwd, {"directory": old_directory})
+            print("added")
         
     @command(4) 
     def put(self, filename, binary = True):
         """Transfer a file to the server. Binary mode by default."""
         if binary:
-            self._connection.storbinary("STOR %s" % filename, open(filename, 'rb'))
+            self._connection.storbinary("STOR %s" % ntpath.basename(filename), open(filename, 'rb'))
         else:
-            self._connection.storlines("STOR %s" % filename, open(filename, 'r'))            
+            self._connection.storlines("STOR %s" % ntpath.basename(filename), open(filename, 'r'))            
         
     @command(5) 
     def get(self, filename, binary = True):

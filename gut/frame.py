@@ -108,24 +108,21 @@ class Frame(object):
             else:
                 func(self, **func_args)                
 
-    def deriveFunctionWithPriority(self, function, priority, name=None):
+    def deriveFunctionWithPriority(self, top_function, function, priority, name=None):
         """Create a copy of an existing command function with a specified priority and optionally name"""
-        newfunction = types.FunctionType(function.__code__, function.__globals__, name or function.__name__, function.__defaults__, function.__closure__)
+        newfunction = types.FunctionType(function.__code__, function.__globals__, name or (function.__name__ + "(" + top_function.__name__ + ")"), function.__defaults__, function.__closure__)
         newfunction.priority = priority
         newfunction.hooks = function.hooks
         newfunction.derived = True
         newfunction.quiet = function.quiet
+        setattr(self, newfunction.__name__, newfunction)        
         return newfunction
                 
-    def insertFunctionWithPriority(self, top_function, copied_function, args = {}, priority = None):
+    def insertFunction(self, function, args = {}):
         """Create a copy of a function with priority and insert it in the appropriate place in the command queue."""
-        if priority == None:
-            priority = copied_function.priority
-        newfunc = self.deriveFunctionWithPriority(copied_function, priority, copied_function.__name__ + "(" + top_function.__name__ + ")")
-        setattr(self, newfunc.__name__, newfunc)
-        self.functions.append(getattr(self, newfunc.__name__))
+        self.functions.append(getattr(self, function.__name__))
         self.functions.sort(key=lambda x: x.priority)
-        self.args[newfunc.__name__] = args
+        self.args[function.__name__] = args
 
 ################################################################################
 #################### Hooks

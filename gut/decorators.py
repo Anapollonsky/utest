@@ -11,3 +11,14 @@ def hook(hook = True):
         func.hook = True
         return func
     return decorator
+
+
+# def bind(f):
+#     """Decorate function `f` to pass a reference to the function
+#     as the first argument"""
+#     return f.__get__(f, type(f))
+
+# @bind
+# def foo(self, x):
+#     "This is a bound function!"
+#     print(self, x)
