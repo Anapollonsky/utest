@@ -41,8 +41,8 @@ class sh_Frame(Interactive_Frame):
 
 ################################################################################
 #################### Command functions
-    @command(0, quiet=True)
+    @command(0)
     def shell(self, shell = 'sh'):
         """Used to set the shell, if any."""
         self._shell = shell
-    
+

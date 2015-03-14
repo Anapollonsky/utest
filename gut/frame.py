@@ -103,7 +103,7 @@ class Frame(object):
                         func_args[arg] = hook(self, func_args[arg])
 
             ## Run function, with self as first argument for derived functions.
-            if not hasattr(func, 'derived'):
+            if func.derived == False:
                 func(**func_args)
             else:
                 func(self, **func_args)                
@@ -115,7 +115,8 @@ class Frame(object):
         newfunction.hooks = function.hooks
         newfunction.derived = True
         newfunction.quiet = function.quiet
-        setattr(self, newfunction.__name__, newfunction)        
+        # print("Derived: " + str(getattr(getattr(self, inspect.stack()[1][3]), "derived")))
+        setattr(self, newfunction.__name__, newfunction)
         return newfunction
                 
     def insertFunction(self, function, args = {}):
@@ -123,7 +124,7 @@ class Frame(object):
         self.functions.append(getattr(self, function.__name__))
         self.functions.sort(key=lambda x: x.priority)
         self.args[function.__name__] = args
-
+        
 ################################################################################
 #################### Hooks
     @hook()

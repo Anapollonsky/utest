@@ -3,6 +3,7 @@ def command(priority, hooks = {}, quiet = False):
         func.priority = priority
         func.hooks = hooks
         func.quiet = quiet
+        func.derived = False
         return func
     return decorator
 
