@@ -142,7 +142,7 @@ class Frame(object):
                 for variable in self._vars: # if input is anything else, replace as string
                     sequence = re.sub(variable, str(self._vars[variable]), str(sequence))
         return sequence
-    
+
     @hook()
     def hook_show_args(self, string):
         if hasattr(self, "_show_args"):
@@ -203,41 +203,41 @@ class Frame(object):
 class Interactive_Frame(Frame):
 
     global_permanent = {"capture": None, "connect": None}    
-################################################################################
-#################### Hooks
-    @hook()
-    def hook_var_replace(self, sequence):
-        if hasattr(self, "_vars"):
-            if isinstance(sequence, list): # if input is list, replace in every member
-                for member in sequence:
-                    for variable in self._vars:
-                        member = re.sub(variable, str(self._vars[variable]), member)
-            elif isinstance(sequence, dict): # if input is dictionary, replace in every value
-                for member in sequence:
-                    for variable in self._vars:
-                        sequence[member] = re.sub(variable, str(self._vars[variable]), sequence[member])
-            else:
-                for variable in self._vars: # if input is anything else, replace as string
-                    sequence = re.sub(variable, str(self._vars[variable]), str(sequence))
-        return sequence
+# ################################################################################
+# #################### Hooks
+#     @hook()
+#     def hook_var_replace(self, sequence):
+#         if hasattr(self, "_vars"):
+#             if isinstance(sequence, list): # if input is list, replace in every member
+#                 for member in sequence:
+#                     for variable in self._vars:
+#                         member = re.sub(variable, str(self._vars[variable]), member)
+#             elif isinstance(sequence, dict): # if input is dictionary, replace in every value
+#                 for member in sequence:
+#                     for variable in self._vars:
+#                         sequence[member] = re.sub(variable, str(self._vars[variable]), sequence[member])
+#             else:
+#                 for variable in self._vars: # if input is anything else, replace as string
+#                     sequence = re.sub(variable, str(self._vars[variable]), str(sequence))
+#         return sequence
     
-    @hook()
-    def hook_show_args(self, string):
-        if hasattr(self, "_show_args"):
-            self.conman.message(1, "Argument: \"" + str(string) + "\"")
-        return string
+#     @hook()
+#     def hook_show_args(self, string):
+#         if hasattr(self, "_show_args"):
+#             self.conman.message(1, "Argument: \"" + str(string) + "\"")
+#         return string
 
     
 ################################################################################
 #################### Command Functions
     
-    @command(4, [hook_var_replace, hook_show_args])
+    @command(4, [Frame.hook_var_replace, Frame.hook_show_args])
     def send(self, content):
         """Send the frame."""
         self._send = content
         self.send_frame()
 
-    @command(7, [hook_show_args], quiet=True)
+    @command(7, [Frame.hook_show_args], quiet=True)
     def capture(self):
         """Capture some data."""
         self._response += self.capture_message()
@@ -250,7 +250,7 @@ class Interactive_Frame(Frame):
     def print_send(self):
         self.conman.message(1, self._send)
         
-    @command(8, [hook_show_args])
+    @command(8, [Frame.hook_show_args])
     def reject(self, array, regex = False):
         """Throw an error if any string in list-argument is present in given frame's responses."""
         if isinstance(array, list):
@@ -264,7 +264,7 @@ class Interactive_Frame(Frame):
             elif regex == False and str(array) in self._response:
                 self.conman.terror(["Captured rejected substring in response:" + array.strip(), self._response])                
 
-    @command(6, [hook_var_replace, hook_show_args])
+    @command(6, [Frame.hook_var_replace, Frame.hook_show_args])
     def expect(self, array, regex = False):
         """Try and capture everything in array before time runs out."""
         diminishing_expect = [re.escape(x) for x in array] if regex == False else array
@@ -290,7 +290,7 @@ class Interactive_Frame(Frame):
                 self.conman.message(1, "Captured in response: " + k.strip())
         self._timeout = {"timeout": timer}
 
-    @command(10, [hook_var_replace, hook_show_args])
+    @command(10, [Frame.hook_var_replace, Frame.hook_show_args])
     def store_regex(self, regexes):
         """Capture regexes in responses and store in the storage dictionary. Accepts lists and strings."""
         def store_regex_single(self, regex):
@@ -306,7 +306,7 @@ class Interactive_Frame(Frame):
         elif isinstance(regexes, str):
             store_regex_single(self, regexes)
 
-    @command(12, [hook_var_replace, hook_show_args])
+    @command(12, [Frame.hook_var_replace, Frame.hook_show_args])
     def check_regex(self, regexes):
         """Verify that the regexes extracted in the current frame match those stored with store_regex.
         Regexes stored and retrieved based purely on the regex that's used to capture them."""
@@ -327,6 +327,6 @@ class Interactive_Frame(Frame):
         else:
             check_regex_single(self, regexes)
 
-    @command(5, [hook_show_args])
+    @command(5, [Frame.hook_show_args])
     def wait_after_send(self, wait_time):
         time.sleep(wait_time)
