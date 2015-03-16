@@ -13,6 +13,7 @@ class Frame(object):
     global_permanent = {}
     
     def __init__(self, local_settings, conman):
+        """ Initialize a frame, handling different input argument types and whatnot."""
         self._response = ""
         self.args = {}
         ut.recursive_dict_merge(local_settings, self.__class__.global_permanent)
