@@ -20,6 +20,7 @@ class Conman:
         self.storage = {}
         self.interfaces = []
         
+        
     def get_interface(self, name):
         """Import specific interface from /interfaces"""
 
@@ -35,7 +36,6 @@ class Conman:
             for interfacename, interface in inspect.getmembers(module):
                 if inspect.isclass(interface) and hasattr(interface, "interfacename") and interface.interfacename == name:
                     self.interfaces.append(interface)
-                    ut.assign_function_attributes(interface, self)
                     self.message(2, "Found interface \"" + name + "\"")
                     return interface
 
@@ -110,8 +110,7 @@ class Conman:
         message_functions = [message0] *  (4 - len(used_messages)) + used_messages
         return message_functions
 
-    def message(self, level, content):
-        
+    def message(self, level, content):        
         outstr = self.message_functions[level - 1](content)
         if outstr: print(outstr)
     
@@ -135,5 +134,3 @@ class Conman:
     def update_terminal(self):
         self.terminal = {}
         self.terminal["rows"], self.terminal["cols"] = ut.getTerminalSize()
-
-

@@ -43,11 +43,3 @@ def getTerminalSize():
     if not cr:
         cr = (env.get('LINES', 25), env.get('COLUMNS', 80))
     return int(cr[1]), int(cr[0])
-
-def assign_function_attributes(Frame, conman):
-    """Assign default attributes to all functions in all interfaces"""
-    functions = [method for name, method in Frame.__dict__.items() if (callable(method) and hasattr(method, "priority"))]
-    for func in functions:
-        for attr in Frame.default_func_attrs:
-            if not hasattr(func, attr):
-                setattr(func, attr, Frame.default_func_attrs[attr])

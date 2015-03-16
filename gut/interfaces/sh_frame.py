@@ -19,7 +19,7 @@ class sh_Frame(Interactive_Frame):
     def send_frame(self):
         """Transmit a frame object's content to intended recipient."""
         self._connection.sendline(self._send)
-        self._connection.expect([">", pexpect.TIMEOUT], timeout=1)        
+        time.sleep(.1)
 
     def expect_message(self, array, timer):
         """Wait for a message from an array, return either a capture or a timeout."""
@@ -41,8 +41,8 @@ class sh_Frame(Interactive_Frame):
 
 ################################################################################
 #################### Command functions
-    @command(0, quiet=True)
+    @command(0)
     def shell(self, shell = 'sh'):
         """Used to set the shell, if any."""
         self._shell = shell
-    
+

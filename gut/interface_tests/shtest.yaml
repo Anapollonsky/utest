@@ -1,25 +1,17 @@
 global:
   interface: shell
+  shell: sh
   
 cmd:
   send: ls /
   expect:
     - bin
     - usr
-  show_args:
   print_response:
-  print_send:
-  print_time:
 
 cmd:
   send: ls /
   expect:
-    array:
-      - bin
-      - usr
-    regex: True
-  show_args:
-
-
-
-
+    - bin
+    - usr
+  print_response:

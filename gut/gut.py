@@ -21,31 +21,32 @@ parser.add_argument("-l", "--log", help="set output log filename", default = Non
 parser.add_argument("--version", help="print out version and exit",
                     action='version', version='%(prog)s ' + str(VERSION))
     
-def parse_include(thefile, command_queue, conman):
-    """Include the YAML commands defined in another file. Works recursively, commands added in-place."""
-    try:
-        infile = open(thefile, 'r')
-    except IOError:
-        conman.ferror("Failed to open file " + thefile + ", exiting")            
-    include_queue = pa.parse_yaml(infile, conman)
-    command_queue[0].insert(0, (include_queue, thefile))
-
-def parse_global(settings, conman):
-    """Generate new global_temporary settings from global_permanent settings and new "global" block"""
-    conman.global_temporary = deepcopy(conman.global_permanent)
-    ut.recursive_dict_merge(conman.global_temporary, settings)
-
-def parse_command(local_settings, conman):
-    """Generate new local settings from global_temporary settings and new "cmd" block. Perform command actions."""
-    if hasattr(conman, "global_temporary"):
-        ut.recursive_dict_merge(local_settings, conman.global_temporary)
-    
-    # Construct appropriate frame based on interface
-    interface = conman.get_interface(local_settings["interface"])
-    frame = interface(local_settings, conman)
-    frame.perform_actions()
     
 def parse_block(block, command_queue, conman):
+    def parse_include(thefile, command_queue, conman):
+        """Include the YAML commands defined in another file. Works recursively, commands added in-place."""
+        try:
+            infile = open(thefile, 'r')
+        except IOError:
+            conman.ferror("Failed to open file " + thefile + ", exiting")            
+        include_queue = pa.parse_yaml(infile, conman)
+        command_queue[0].insert(0, (include_queue, thefile))
+
+    def parse_global(settings, conman):
+        """Generate new global_temporary settings from global_permanent settings and new "global" block"""
+        conman.global_temporary = deepcopy(conman.global_permanent)
+        ut.recursive_dict_merge(conman.global_temporary, settings)
+
+    def parse_command(local_settings, conman):
+        """Generate new local settings from global_temporary settings and new "cmd" block. Perform command actions."""
+        if hasattr(conman, "global_temporary"):
+            ut.recursive_dict_merge(local_settings, conman.global_temporary)
+
+        # Construct appropriate frame based on interface
+        interface = conman.get_interface(local_settings["interface"])
+        frame = interface(local_settings, conman)
+        frame.perform_actions()
+    
     """Delegate actions based on top-level block type."""
     if "global" in block: # Global settings being set
         parse_global(block["global"], conman)
@@ -69,22 +70,20 @@ def parse_command_queue (conman, queue):
     conman.message(3, "Leaving \"" + queue[1] + "\"")    
     
 if __name__ == "__main__":
-    args = parser.parse_args()
-    conman = Conman(args.verbose)    
-    in_stream = open(args.file)
-    command_queue_base = pa.parse_yaml(in_stream, conman)        
-    ut.assign_function_attributes(Frame, conman)
-    
+    args = parser.parse_args() # Parse arguments
+
+    conman = Conman(args.verbose) # Make conman
+    command_queue_base = pa.parse_yaml(open(args.file), conman) # Make initial command queue
+
     if args.address:
         conman.global_permanent["address"] = args.address
     if args.log:
         conman.global_permanent["log"] = args.log
-
+            
     iteration = 1
-    while(iteration <= args.repeat):
-        conman.message(4, "Beginning Iteration " + str(iteration) + " of " + str(args.repeat) + "...") 
-        command_queue = list(command_queue_base)
-        parse_command_queue(conman, (command_queue, args.file))
+    while(iteration <= args.repeat):        
+        conman.message(4, "Beginning Iteration " + str(iteration) + " of " + str(args.repeat) + "...")
+        parse_command_queue(conman, (deepcopy(command_queue_base), args.file))
         conman.message(4, "Iteration " + str(iteration) + " Completed")
         iteration += 1
 

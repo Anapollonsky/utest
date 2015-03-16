@@ -6,15 +6,13 @@
 #+HTML_HEAD: "<style type="text/css">.org-src-container{ background-color: #181830; color: #DDDDFF; font-size: 130%} </style>"
 #+OPTIONS: title:nil ^:nil
 #+BIND: org-latex-title-command ""
-* GUT Documentation V1
+* GUT Documentation V2
 ** About
 GUT is a testing platform, particularly well suited for testing inferior hardware over a telnet or ssh connection. GUT provides a flexible framework that allows for easy expansion by the user of existing functionality, while providing a simple, YAML-formatted syntax for running tests.
 
-GUT has a simple structure. Tests are written in YAML format and are passed to the program. Tests specify a sequence, in which each member consists of an /interface/ and a set of /command functions/. An /interface/ is a class that specifies several procedures; a connection procedure, a procedure to send a message, a procedure to read the response, etc. As of the time of writing, there are four included interfaces with GUT: BCI, ARD546, Telnet, and Shell. "BCI", "ARD546" and "Telnet" open a telnet connection over a specified port to a target, whereas "Shell" runs the "sh" process locally.  
+GUT has a simple structure. Tests are written in YAML format and are passed to the program. Tests specify a sequence, in which each member consists of an /interface/ and a set of corresponding /command functions/. An /interface/ is a class that specifies how connection and subsequent communication is performed. The associated /command functions/ are actions that can be performed for every entry in the sequence. They range from something as simple as setting a connection variable (Setting the username used during login, for example), to actually sending data over the interface or parsing the response. /Command functions/ are flexible, simple to write, and are always executed in a deterministic order.
 
-/Command functions/ are actions that are performed for every entry in the sequence. They range from something as simple as setting a connection variable (Setting the username used during login, for example), to actually sending data over the interface or parsing the response. /Command functions/ are generally interface-independent, simple to write, and are always executed in a deterministic order.
-
-These two abstractions provide GUT with the flexibility to be used to develop sophisticated, top-level tests for various systems. GUT comes with one python library requirement, PyYaml, to facilitate parsing the YAML file. In addition the "Shell" interface requires the Pexpect library to be installed; unfortunately, Pexpect doesn't work with Windows, and so running GUT on Windows requires hiding the file associated with the "Shell" interface.
+The flexible interface abstraction provides GUT with the flexibility to be used to develop sophisticated, top-level tests for various systems.
 
 ** Usage
 This section will give a brief introduction to writing proper YAML files for GUT with the default YAML parser.
@@ -49,7 +47,7 @@ cmd:
 
 The =cmd= block is responsible for sending data over an interface and performing analysis on the results. Each =cmd= block is a dictionary that maps "command functions" to their arguments. In the example above, =username= is a function with the argument "lucent", =wait_after_send= is a function with the argument 0.5, and =print_response= is a function with no argument. The order in which these functions appear in a block has no effect on how the block is executed; instead, these functions are run in an order determined by the /priority/ of the function. The priority of a function is a hardcoded numerical value assigned to each function; the higher the priority, the lower the priority-number, the earlier the function will be run in each block. 
 
-In addition to the commands above, there are some commands functions which are dynamically included due to the command-line arguments. For example, in the block above, you see that there is no specification of the address of the target. This is because the GUT command-line argument =--address= was used to set the address. This value is used as the default, but it can be overwritten by manually inserting an =address: localhost= entry or similar in a block. Similarly, there are two commands which are always inserted and hidden: =connect= and =capture=. The =connect= command function has a priority such that it is run after all connection parameters, such as "interface", "username" and "password", have been set. It opens a connection to the desired target, or returns an existing one if a previous command had already opened one. The =capture= command, on the other hand, is used to capture any responses from the target.
+In addition to the commands above, there are some commands functions which are dynamically included due to the command-line arguments. For example, in the block above, you see that there is no specification of the address of the target. This is because the GUT command-line argument =--address= was used to set the address. This value is used as the default, but it can be overwritten by manually inserting an =address: localhost= entry or similar in a block. Similarly, certain interfaces implicitly include their own commands into each command. For a telnet frame, there are two commands which are always inserted and hidden: =connect= and =capture=. The =connect= command function has a priority such that it is run after all connection parameters, such as "interface", "username" and "password", have been set. It opens a connection to the desired target, or returns an existing one if a previous command had already opened one. The =capture= command, on the other hand, is used to capture any responses from the target.
 
 With these modifications (and if the command was run with =--address localhost=), the block above is also thus equivalent to:
 
@@ -123,7 +121,7 @@ cmd:
 
 global:
   interface: ard546
-  address: 135.112.98.30
+  address: 135.112.98.30  
   
 cmd:
   send: |
