@@ -30,7 +30,7 @@ class ARD546_Frame(Interactive_Frame):
 
     def capture_message(self):
         """Try to capture text without an "expect" clause."""
-        time.sleep(.4)
+        # time.sleep(.1)
         return self._connection.read_very_eager().decode('ascii')    
 
 ################################################################################

@@ -98,7 +98,10 @@ class Conman:
             pass
 
         def message_color(content, spacing, color):
-            outstr = spacing + color  + u"\u2771" + " " + Fore.RESET + content.strip().replace("\n", "\n" + spacing)
+            content = content.strip()
+            if "\n" in content:
+                content = "\n" + content
+            outstr = spacing + color  + u"\u2771" + " " + Fore.RESET + content.replace("\n", "\n" + spacing)
             return outstr
 
         message_properties = zip([Fore.GREEN, Fore.YELLOW, Fore.CYAN, Fore.RED], ['  ' * k for k in range(3, -1, -1)])
