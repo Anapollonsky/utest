@@ -36,7 +36,6 @@ class Conman:
             for interfacename, interface in inspect.getmembers(module):
                 if inspect.isclass(interface) and hasattr(interface, "interfacename") and interface.interfacename == name:
                     self.interfaces.append(interface)
-                    ut.assign_function_attributes(interface, self)
                     self.message(2, "Found interface \"" + name + "\"")
                     return interface
 

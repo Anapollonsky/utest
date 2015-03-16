@@ -70,22 +70,20 @@ def parse_command_queue (conman, queue):
     conman.message(3, "Leaving \"" + queue[1] + "\"")    
     
 if __name__ == "__main__":
-    args = parser.parse_args()
-    conman = Conman(args.verbose)    
-    in_stream = open(args.file)
-    command_queue_base = pa.parse_yaml(in_stream, conman)        
-    ut.assign_function_attributes(Frame, conman)
-    
+    args = parser.parse_args() # Parse arguments
+
+    conman = Conman(args.verbose) # Make conman
+    command_queue_base = pa.parse_yaml(open(args.file), conman) # Make initial command queue
+
     if args.address:
         conman.global_permanent["address"] = args.address
     if args.log:
         conman.global_permanent["log"] = args.log
-
+            
     iteration = 1
-    while(iteration <= args.repeat):
-        conman.message(4, "Beginning Iteration " + str(iteration) + " of " + str(args.repeat) + "...") 
-        command_queue = list(command_queue_base)
-        parse_command_queue(conman, (command_queue, args.file))
+    while(iteration <= args.repeat):        
+        conman.message(4, "Beginning Iteration " + str(iteration) + " of " + str(args.repeat) + "...")
+        parse_command_queue(conman, (deepcopy(command_queue_base), args.file))
         conman.message(4, "Iteration " + str(iteration) + " Completed")
         iteration += 1
 

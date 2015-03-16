@@ -22,7 +22,6 @@ class Frame(object):
             """Verify that all the functions specified in local_settings can be found."""
             for func_string in local_settings:
                 if func_string not in [func.__name__ for func in functions]:
-                    print(functions)
                     conman.ferror("Unexpected function specified: \"" + func_string + "\"")
                     
         def handle_parametric_entry(local_settings, func, conman, argspec):
