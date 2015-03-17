@@ -203,29 +203,8 @@ class Frame(object):
 class Interactive_Frame(Frame):
 
     global_permanent = {"capture": None, "connect": None}    
-# ################################################################################
-# #################### Hooks
-#     @hook()
-#     def hook_var_replace(self, sequence):
-#         if hasattr(self, "_vars"):
-#             if isinstance(sequence, list): # if input is list, replace in every member
-#                 for member in sequence:
-#                     for variable in self._vars:
-#                         member = re.sub(variable, str(self._vars[variable]), member)
-#             elif isinstance(sequence, dict): # if input is dictionary, replace in every value
-#                 for member in sequence:
-#                     for variable in self._vars:
-#                         sequence[member] = re.sub(variable, str(self._vars[variable]), sequence[member])
-#             else:
-#                 for variable in self._vars: # if input is anything else, replace as string
-#                     sequence = re.sub(variable, str(self._vars[variable]), str(sequence))
-#         return sequence
-    
-#     @hook()
-#     def hook_show_args(self, string):
-#         if hasattr(self, "_show_args"):
-#             self.conman.message(1, "Argument: \"" + str(string) + "\"")
-#         return string
+################################################################################
+#################### Hooks
 
     
 ################################################################################
