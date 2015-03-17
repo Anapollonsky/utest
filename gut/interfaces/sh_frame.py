@@ -1,6 +1,6 @@
 import pexpect
 import time
-from frame import Interactive_Frame
+from interfaces.frame import Interactive_Frame
 from decorators import command
 
 class sh_Frame(Interactive_Frame):

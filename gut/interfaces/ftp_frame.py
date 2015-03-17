@@ -4,7 +4,7 @@ import inspect
 from ftplib import FTP
 import socket
 import ntpath
-from frame import Frame
+from interfaces.frame import Frame
 from decorators import command
 
 

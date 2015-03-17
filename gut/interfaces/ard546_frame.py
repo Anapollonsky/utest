@@ -1,7 +1,7 @@
 import time
 import telnetlib
 import socket
-from frame import Interactive_Frame
+from interfaces.frame import Interactive_Frame
 from decorators import command
 
 class ARD546_Frame(Interactive_Frame):

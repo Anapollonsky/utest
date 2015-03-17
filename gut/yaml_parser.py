@@ -1,7 +1,6 @@
 import yaml
 import re
 import utils as ut
-from frame import Frame
 
 def parse_yaml(stream, conman):
     """Take a YAML stream and parse it in such a way that the upper-most dictionary is instead saved as a list, for sequential access."""

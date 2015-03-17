@@ -1,7 +1,7 @@
 import telnetlib
 import socket
 import time
-from frame import Interactive_Frame
+from interfaces.frame import Interactive_Frame
 from decorators import command
 
 class BCI_Frame(Interactive_Frame):

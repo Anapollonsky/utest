@@ -5,7 +5,7 @@ import yaml_parser as pa
 import utils as ut
 from conman import Conman
 from copy import deepcopy
-from frame import Frame
+from interfaces.frame import Frame
 
 colorama.init()
 

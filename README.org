@@ -70,32 +70,26 @@ Here's what GUT does, given the block above:
 + Set the frame attribute =password= to "notpassword"
 + Set the frame attribute =interface= to "sh"
 + Set the frame attribute =address= to "localhost"
-+ Open a connection to the target.
++ Open a connection to the target, which uses frame attributes =username=, =password=, =interface= and =address=.
 + Send the text "pwd" down the connection to the target.
 + Wait for 0.5 seconds.
 + Capture the response.
 + Print the response.
 + Append the response to logfile "log/test2log".
 
-This is all well and good, but what if we want to run functions that require a more complicated input than a string or a number? What about multiple arguments to functions? How can this be handled? The GUT parser handles multiple arguments by accepting a /dictionary/ (or /map/) of arguments. The following will be a slightly contrived example, because as of the time of this writing, no functions implemented required more than one argument (why will be made clear shortly). Nevertheless, the parser supports it:
+This is all well and good, but what if we want to run functions that require a more complicated input than a string or a number? What about multiple arguments to functions? How can this be handled? The GUT parser handles multiple arguments by accepting a /dictionary/ (or /map/) of arguments. Here's an example:
 #+BEGIN_SRC yaml
 cmd:
-  fake_function:
-    arg1: blah
-    arg2: bloo
+  expect:
+    array: [teststring, (?)error]
+    regex: True
 #+END_SRC
-=fake_function= above is a function that accepts two arguments. The names "arg1" and "arg2" are expected to match the actual argument names of fake_function, wherever it is defined; the order in which they appear, on the other hand, doesn't matter. This example demonstrates how GUT actually interprets these blocks. Consider the block below:
+=expect= above is a function that accepts two arguments, =array= and =regex=, that match the parameters in the function definition. The expect definition also defines a default value for the =regex= argument, making it optional. This also leads into a demonstration of how the more compact argument passing shown previously works: In the event that a single argument is sufficient to run the command function, that argument can be passed directly to the function name. Thus, if we were willing to sacrifice regex support, the command could be rewritten as:
 #+BEGIN_SRC yaml
 cmd:
-  send: blahblah
+  expect: [teststring, (?)error]
 #+END_SRC
-The parser assumes that because the value assigned to the function =send= is not a dictionary of arguments, it is instead a singular argument. When the function is called, this singular argument is directly inserted in the function. This "optimization" makes it easier to write concise tests, but it also makes no sense for functions that expect more than a single argument. The short block above is expanded by the parser directly to the following:
-#+BEGIN_SRC yaml
-cmd:
-  send: 
-    content: blahblah
-#+END_SRC
-Here, "content" is the name of the argument of the =send= function.
+This "optimization" makes it easier to write concise tests.
 
 *** Complicated Example
 Below is an example of a more complicated test, showing the flexibility of GUT.
@@ -183,32 +177,6 @@ T SET DATA"
 
 #+END_SRC
 
-*** Command Functions
-There are many built-in command functions. The table below lists these. In addition, GUT was designed so that adding additional functions (or interfaces) would be trivial, so this list can grow as the need arises.
-| Function         | Description                                                                                                                     | Priority | Required? | Quiet? | File           |
-|------------------+---------------------------------------------------------------------------------------------------------------------------------+----------+-----------+--------+----------------|
-| send             | Transmits a given message.                                                                                                      |        4 | Yes       | No     | base_funcs.py  |
-| username         | Set connection username                                                                                                         |        0 | No        | Yes    | base_funcs.py  |
-| password         | Set connection password                                                                                                         |        0 | No        | Yes    | base_funcs.py  |
-| interface        | Set connection interface                                                                                                        |        0 | Yes       | Yes    | base_funcs.py  |
-| address          | Set connection address                                                                                                          |        0 | Yes       | Yes    | base_funcs.py  |
-| connect          | Use the available parameters to establish a connection. Automatically added to every frame.                                     |        1 | Yes       | Yes    | base_funcs.py  |
-| capture          | Capture any incoming text. Automatically added to every frame.                                                                  |        7 | Yes       | Yes    | base_funcs.py  |
-| timeout          | This controls how long the expect and expect_regex functions wait before returning a failure. If omitted, set to ten.           |        0 | No        | Yes    | base_funcs.py  |
-| expect           | Ensure that every string in a given list of strings is captured.                                                                |        6 | No        | No     | regex_funcs.py |
-| reject           | Ensure that no string in a given list of strings is captured.                                                                   |        8 | No        | No     | regex_funcs.py |
-| expect_regex     | Ensure that every regular expression in a given list of regular expressions is captured.                                        |        6 | No        | No     | regex_funcs.py |
-| reject_regex     | Ensure that no regular expression in a given list of regular expressions is captured.                                           |        8 | No        | No     | regex_funcs.py |
-| store_regex      | Store a list of regex captures in a global dictionary, with the regex expression as the key.                                    |       10 | No        | No     | regex_funcs.py |
-| check_regex      | Take a single or list of regex expression, and compare every captured string with that in a global dictionary.                  |       12 | No        | No     | regex_funcs.py |
-| wait_before      | Wait for specified number of seconds before doing anything else.                                                                |       -1 | No        | No     | functions.py   |
-| wait_after       | Wait for specified number of seconds after doing everything else.                                                               |      101 | No        | No     | functions.py   |
-| wait_after_send  | Wait for a specified number of seconds after sending the data to the receiver. Useful when responses take a while to come back. |        5 | No        | No     | functions.py   |
-| variable_replace | Accepts a dictionary as an argument. Substitutes each key for the value in the frame send, expect and reject strings.           |        1 | No        | No     | util_funcs.py  |
-| print_time       | Prints the time. Accepts an optional formatting argument.                                                                       |        0 | No        | No     | util_funcs.py  |
-| print_response   | Print the "responses" frame field.                                                                                              |      100 | No        | No     | util_funcs.py  |
-| log              | Append the "send" and the "responses" frame fields to a file specified by a provided filename.                                  |      100 | No        | Yes    | util_funcs.py  |
-|                  |                                                                                                                                 |          |           |        |                |
 
 ** Development
 *** Overview

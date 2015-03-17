@@ -5,7 +5,7 @@ import inspect
 import importlib
 import functools
 from colorama import Fore
-from frame import Frame
+from interfaces.frame import Frame
 import utils as ut
 
 class Conman:
