@@ -19,8 +19,11 @@ class MXG_Frame(scpi_Frame):
 ################################################################################
 #################### Command functions
 
-    @command(3)        
+    @command(3) 
     def center_freq(self, freq, unit="MHz"):
         """Permanently Set output center frequency, in MHz by default"""
-        self._connection.write((":SOUR:FREQ:CW " + str(freq) + " " + str(unit) + "\n").encode('ascii'))
-        
+        self.send_string(":FREQ:MODE CW")
+        time.sleep(.1)
+        self._connection.read_very_eager()        
+        self.send_string(":FREQ:CW " + str(freq) + " " + str(unit))
+

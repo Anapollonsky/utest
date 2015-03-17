@@ -64,7 +64,7 @@ class MXA_Frame(scpi_Frame):
     def send_val_freq(self, freq, axis = 'Y', marker = 12, unit="MHz"):
         """Get value at frequency"""
         self.marker_mode(marker, 'POS')
-        self.marker_axis_set(marker, 'X', str(freq) + " " + unit)
+        self.marker_axis_set(marker, 'X', str(freq) + " " + str(unit))
         time.sleep(.2)
         self._connection.read_very_eager()        
         self.marker_axis_get(marker, axis)
@@ -75,7 +75,7 @@ class MXA_Frame(scpi_Frame):
         """Provide list of Amplitude,Frequency pairs for given threshold and excursion"""
         self._connection.read_very_eager()
         time.sleep(.2)
-        self.send_string(":CALC:DATA" + str(source) + ":PEAK? " + str(excursion) + "," + str(threshold) + "," + sort)
+        self.send_string(":CALC:DATA" + str(source) + ":PEAK? " + str(excursion) + "," + str(threshold) + "," + str(sort))
 
 
     
