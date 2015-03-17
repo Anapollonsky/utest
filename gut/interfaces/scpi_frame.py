@@ -23,7 +23,10 @@ class scpi_Frame(Interactive_Frame):
         """Try to capture text without an "expect" clause."""
         time.sleep(.3)
         return self._connection.read_very_eager().decode('ascii')        
-    
+
+    def send_string(self, string):
+        """ Format a string for proper sendoff. """
+        self._connection.write((string + "\n").encode('ascii'))
 ################################################################################
 #################### Command functions
 

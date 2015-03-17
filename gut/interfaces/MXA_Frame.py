@@ -6,6 +6,7 @@ from decorators import command
   
 class MXA_Frame(scpi_Frame):
     interfacename = "mxa"
+
     
     def establish_connection(self, address):
         """ Connection procedure for remote shell."""
@@ -16,10 +17,9 @@ class MXA_Frame(scpi_Frame):
         time.sleep(.2)
         return con
 
-    def send_string(self, string):
-        """ Format a string for proper sendoff. """
-        self._connection.write((string + "\n").encode('ascii'))
-    
+################################################################################
+#################### Helper Functions
+
     def marker_mode(self, ind, mode):
         """Set marker mode. Ind is value 1-12, mode is one of 'POS', 'DELT', 'FIX', 'OFF'"""
         if ind in range(1, 13):
@@ -54,7 +54,7 @@ class MXA_Frame(scpi_Frame):
 
     @command(3)        
     def center_freq(self, freq, unit="MHz"):
-        """Permanently Set center frequency, in MHz by default. Must be set in vicinity of"""
+        """ Permanently Set center frequency, in MHz by default """
         self._connection.read_very_eager()
         time.sleep(.2)
         self.send_string(":SENS:FREQ:CENT " + str(freq) + " " + str(unit))

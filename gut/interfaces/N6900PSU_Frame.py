@@ -15,7 +15,7 @@ class N6900_Frame(scpi_Frame):
             return None
         time.sleep(.2)
         return con
-
+    
 ################################################################################
 #################### Command functions
 
@@ -29,11 +29,29 @@ class N6900_Frame(scpi_Frame):
             state = "ON"
         if state.upper() in states:
             state = state.upper()
-        self._connection.write(("OUTPUT:STATE " + str(state) + "\n").encode('ascii'))
+        self.send_string("OUTPUT:STATE " + str(state))
 
+    @command(4)        
+    def get_output(self):
+        """Get output voltage"""
+        self.send_string("OUTPUT:STATE?")
 
     @command(3)        
     def set_volt(self, volt):
         """Set output voltage"""
-        self._connection.write(("VOLT " + str(volt) + "\n").encode('ascii'))
+        self.send_string("VOLT " + str(volt))
 
+    @command(4)        
+    def get_volt(self):
+        """Get output voltage"""
+        self.send_string("VOLT?")
+        
+    @command(3)        
+    def set_current_limit(self, limit):
+        """Set current limit, in amps"""
+        self.send_string("CURR:LIM " + str(limit))
+
+    @command(4)        
+    def get_current_limit(self):
+        """Get current limit, in amps"""
+        self.send_string("CURR:LIM?")
