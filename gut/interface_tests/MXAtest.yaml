@@ -1,0 +1,13 @@
+global:
+  interface: mxa
+
+cmd:
+  center_freq: 751
+
+cmd:
+  send_val_freq: 752
+  print_response:
+  
+cmd:
+  send_find_peaks:
+  print_response:
