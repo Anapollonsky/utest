@@ -5,7 +5,7 @@ from frame import Interactive_Frame
 from decorators import command
 
 class scpi_Frame(Interactive_Frame):
-
+    
 ################################################################################
 #################### Command functions
 

@@ -1,10 +1,10 @@
 import time
 import telnetlib
 import socket
-from frame import Frame
+from interfaces.scpi_frame import scpi_Frame
 from decorators import command
 
-class N6900_Frame(Frame):
+class N6900_Frame(scpi_Frame):
     interfacename = "n6900"    
 
     def establish_connection(self, address):

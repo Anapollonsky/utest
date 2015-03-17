@@ -1,7 +1,7 @@
 import time
 import telnetlib
 import socket
-from scpi_frame import scpi_Frame
+from interfaces.scpi_frame import scpi_Frame
 from decorators import command
 
 class MXA_Frame(scpi_Frame):
