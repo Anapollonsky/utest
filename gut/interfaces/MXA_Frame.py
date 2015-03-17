@@ -20,28 +20,33 @@ class MXA_Frame(scpi_Frame):
         """ Format a string for proper sendoff. """
         self._connection.write((string + "\n").encode('ascii'))
     
-    def marker_mode(ind, mode):
+    def marker_mode(self, ind, mode):
         """Set marker mode. Ind is value 1-12, mode is one of 'POS', 'DELT', 'FIX', 'OFF'"""
         if ind in range(1, 13):
-            self.end_string("CALC:MARK" + str(ind) + ":MODE " + mode.upper())
+            self.send_string("CALC:MARK" + str(ind) + ":MODE " + mode.upper())
+            time.sleep(.3)
         else:
-            self.conman.ferror("Invalid parameters passed to " + __func__ ": " + str(ind)+ " | " + str(mode))
+            self.conman.ferror("Invalid parameters passed to marker_mode: " + str(ind)+ " | " + str(mode))
 
-    def marker_axis_set(ind, axis, value)
+    def marker_axis_set(self, ind, axis, value):
         """ Set marker axis value """
-        axes = ['x','y','z']
+        axis = axis.upper()        
+        axes = ['X','Y','Z']
         if axis in axes and ind in range(1, 13):
-            self.send_string("CALC:MARK" + str(ind) + ":" + axis.upper() + " " + value) 
+            self.send_string("CALC:MARK" + str(ind) + ":" + axis + " " + str(value))
+            time.sleep(.1)
         else:
-            self.conman.ferror("Invalid parameters passed to " + __func__ ": " + str(ind)+ " | " + str(axis))
+            self.conman.ferror("Invalid parameters passed to marker_axis_set: " + str(ind)+ " | " + str(axis))
 
-    def marker_axis_get(ind, axis)
+    def marker_axis_get(self, ind, axis):
         """ Get marker axis value """
-        axes = ['x','y','z']
+        axis = axis.upper()
+        axes = ['X','Y','Z']
         if axis in axes and ind in range(1, 13):
-            self.send_string("CALC:MARK" + str(ind) + ":" + axis.upper() + "?") 
+            self.send_string("CALC:MARK" + str(ind) + ":" + axis + "?")
+            time.sleep(.1) 
         else:
-            self.conman.ferror("Invalid parameters passed to " + __func__ ": " + str(ind)+ " | " + str(axis))
+            self.conman.ferror("Invalid parameters passed to marker_axis_get: " + str(ind)+ " | " + str(axis))
             
         
 ################################################################################
@@ -50,17 +55,27 @@ class MXA_Frame(scpi_Frame):
     @command(3)        
     def center_freq(self, freq, unit="MHz"):
         """Permanently Set center frequency, in MHz by default. Must be set in vicinity of"""
+        self._connection.read_very_eager()
+        time.sleep(.2)
         self.send_string(":SENS:FREQ:CENT " + str(freq) + " " + str(unit))
 
+
     @command(4)
-    def send_val_freq(self, freq, axis = 'y', marker = 12):
+    def send_val_freq(self, freq, axis = 'Y', marker = 12, unit="MHz"):
         """Get value at frequency"""
-        marker_axis_set(marker, 'x', freq)
-        marker_axis_get(marker, axis)
+        self.marker_mode(marker, 'POS')
+        self.marker_axis_set(marker, 'X', str(freq) + " " + unit)
+        time.sleep(.2)
+        self._connection.read_very_eager()        
+        self.marker_axis_get(marker, axis)
+        self.marker_mode(marker, 'OFF')
 
     @command(4)
     def send_find_peaks(self, source = 1, threshold = 10, excursion = -200, sort = "FREQ"):
         """Provide list of Amplitude,Frequency pairs for given threshold and excurion"""
-        self.end_string(":CALC:DATA" + str(source) + ":PEAK? " + excursion + "," + threshold + "," + sort)        
+        self._connection.read_very_eager()
+        time.sleep(.2)
+        self.send_string(":CALC:DATA" + str(source) + ":PEAK? " + str(excursion) + "," + str(threshold) + "," + sort)
+
 
     
