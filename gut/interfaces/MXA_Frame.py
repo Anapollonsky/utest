@@ -72,7 +72,7 @@ class MXA_Frame(scpi_Frame):
 
     @command(4)
     def send_find_peaks(self, source = 1, threshold = 10, excursion = -200, sort = "FREQ"):
-        """Provide list of Amplitude,Frequency pairs for given threshold and excurion"""
+        """Provide list of Amplitude,Frequency pairs for given threshold and excursion"""
         self._connection.read_very_eager()
         time.sleep(.2)
         self.send_string(":CALC:DATA" + str(source) + ":PEAK? " + str(excursion) + "," + str(threshold) + "," + sort)
