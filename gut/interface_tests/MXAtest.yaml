@@ -10,4 +10,7 @@ cmd:
   
 cmd:
   send_find_peaks:
+  expect:
+    - "7.52"
   print_response:
+    
