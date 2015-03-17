@@ -184,91 +184,110 @@ GUT is composed of several modules:
 + The main, or *gut.py*, is responsible for controlling program flow. 
 + The parser, *yaml_parser.py* by default, is responsible for reading a YAML file and converting it to a workable data structure.
 + Conman, in *conman.py*, is a singleton class that is used to transfer information between different parts of the program, handle messaging, and manage connections to different interfaces and addresses.
-+ The Frame class, in *frame.py*, is the base class on which all interfaces are based on. The Frame class is not dependent on any communication libraries, like pexpect or telnetlib; all such functionality is left to the interface subclasses.
-+ The interface subclasses are stored under */interfaces*. The subclasses extend the Frame class.
-+ Command functions are stored under */functions*, with the entry-file being functions.py. The functions defined here are used to implement testing functionality.
++ Interfaces are classes, descended from the class "Frame", that define a name, connection mechanism, command functions and helper functions to allow the tester to interact with another object in a useful way. 
 
 *** Adding a command function
 As referred to here, a /command function/ is a command that can be run inside a GUT command-block. GUT performs almost everything through these functions, for the purpose of architectural simplicity.
 
-Any added command function must be available within the same namespace as */functions/function.py*. This means that the function should be defined either in *function.py* itself, or within another file whose contents are imported into function.py. You must manually specify the =priority= of the function, and you may specify the attributes =quiet= (which, if true, stops the function from being printed) and =required= (which would cause a fatal error if this function is not called by a frame); however, if the function =quiet= and =required= attributes are missing, they are automatically set to "False".
+Command functions are defined in interface classes. Very broad functions that could be useful in any interface can be written in the /Frame/ class directly, to make them available everywhere. More targeted functions should be written wherever appropriate so that interfaces that have no need of the functions don't inherit it. 
 
-Below is sample code used for the =log= function. The first argument of every function must be used to pass the frame object itself, and subsequent arguments can be any other python object that can be interpreted by the parser. The passing of the frame object is handled by GUT itself, and every other argument is reliant on the testfile.
+Below is sample code used for the =log= function. A =@command= decorator specifies the priority, hooks and whether the function is quiet. Priority is required, as GUT needs to know how to prioritize different functions; the other two have sane defaults. The next line is the function definition itself. The first argument of every function must be used to pass the frame object itself, and subsequent arguments can be any other python object that can be interpreted by the parser. The passing of the frame object is handled by GUT itself, and every other argument is reliant on the testfile.
 
 #+BEGIN_SRC python
-def log(frame, filename):
-    """Low-priority function to log the sent and received messages to a given file."""
-    try:
-        infile = open(filename, 'a')
-    except IOError:
-        frame.conman.ferror("Failed to open file " + filename + " for logging.")
-    infile.write(frame.send["content"] + "\n\n" + frame.responses + "\n\n")
-    infile.close()
-log.priority = 100
-log.quiet = True
+      @command(priority = 100, hooks = [hook_show_args])
+      def log(self, filename):
+          """Low-priority function to log the sent and received messages to a given file."""
+          try:
+              infile = open(filename, 'a')
+          except IOError:
+              self.conman.ferror("Failed to open file " + filename + " for logging.")
+          infile.write(self._send + "\n\n" + self._response + "\n\n")
+          infile.close()
 #+END_SRC
 
 Several things to note:
 + Perhaps confusingly, "high" priority corresponds to a low value the "priority" function attribute. A priority of 0 will be run very early in the process, whereas 100 will be run very late.
-+ Command functions are very flexible, and there are no restrictions on what code you put in them. Here, log is performing I/O operations. It's inefficient, because every single frame will be opening and closing the file, but it shouldn't be bottlenecking issue.
++ Command functions are very flexible, and there are no restrictions on what code you put in them. Here, log is performing I/O operations. It's inefficient, because every single frame will be opening and closing the file, but it shouldn't be a bottlenecking issue.
 
 *** Adding an interface
 Interfaces are objects that define a connection and how to perform certain operations on it -- how to connect, how to send data, how to receive data -- and are used to allow for connections to be more flexible. All interfaces are stored under */interfaces*, and they all inherit from /Frame/ in *frame.py*. This section will analyze an existing interface under *telnet_frame.py*, which should make it trivial to write your own.
 
-The header of the class includes any required objects, defines the class as inheriting from the /Frame/ class, and defines a class =interfacename=, which is the string that will be used by the rest of the program to differentiate between different interfaces. As such, the interfacename should be distinct from that of every other interface. Note that this particular interface uses telnetlib -- no code outside of the interfaces should know of the details of how the communication protocol works.
+The header of the class includes any required objects and defines the class as inheriting from the /Interactive_Frame/ class. The /Interactive_Frame/ class itself inherits from /Frame/ and defines useful functions to allow the user to interact directly with the target, instead of relying on built-in functions to format and send any messages. 
+
+The header also defines a class =interfacename=, which is the string that will be used by the rest of the program to differentiate between different interfaces. As such, the interfacename should be distinct from that of every other interface. Note that this particular interface uses telnetlib -- no code outside of the interfaces should know of the details of how the communication protocol works.
 #+BEGIN_SRC python
 import time
 import telnetlib
 import socket
-from frame import Frame
+from interfaces.frame import Interactive_Frame
+from decorators import command
 
-class telnet_Frame(Frame):
+class telnet_Frame(Interactive_Frame):
     interfacename = "telnet"    
-
 #+END_SRC
 
-The /establishConnection/ method is a static method that is used to establish a ready-to-use connection. It always accepts "address" as the first argument. /username/ and /password/ are optional arguments; in general, not all connections will need them. If they are defined where they are not accepted, an error will be thrown. Here, defaults are set for the connection, and so if they are not provided, the interface will attempt to connect with default username "lucent" and password "password". The interface returns a connection object that will be stored in conman, and used whenever another command wants to use the same interface.
+The /establishConnection/ method is used to establish a ready-to-use connection. The interface returns a connection object that will be stored in conman, and used whenever another command wants to use an interface with the same arguments. This function is required for all interfaces.
 #+BEGIN_SRC python
-    def establishConnection(self, address, username, password):
+    def establish_connection(self, address, username, password):
         """ Connection procedure for remote shell."""
         try:
             con = telnetlib.Telnet(address, 23, 10)
         except socket.timeout:
             return None
-        con.expect(["ogin"])
-        con.write(username + "\n")
-        con.expect(["assword"])
-        con.write(password + "\n")
+        con.expect(['ogin'.encode('ascii')])
+        con.write(username.encode('ascii') + b"\n")
+        con.expect(['assword'.encode('ascii')])
+        con.write(password.encode('ascii') + b"\n")
         time.sleep(.2)
         return con
 #+END_SRC
 
-The /sendframe/ method accepts no arguments apart from /self/, and is responsible for sending the contents of =self.send["content"]= down the connection.
+The /send_frame/ method accepts no arguments apart from /self/, and is responsible for sending the contents of =self.send["content"]= down the connection. This function is required for interfaces inheriting from /Interactive_Frame/.
 #+BEGIN_SRC python
-    def sendframe(self):
+    def send_frame(self):
         """Transmit a frame object's content to intended recipient."""
-        self.connection.write(self.send["content"] + "\n")
+        self._connection.write(self._send.encode('ascii') + b"\n")
 #+END_SRC
 
-The /expectmessage/ method accepts two arguments: an array, and a timer. The array is a list of regexes which are to be looked for, and the timer specifies when the expect operation times out. This method is needed for command functions "expect" and "expect_regex" to work. This method returns a tuple either =(None, True)= in the event of a timeout, or =(str, False)= in the event of a capture, where =str= is all the text leading up to the captured string, inclusive.
+The /expect_message/ method accepts two arguments: an array, and a timer. The array is a list of regexes which are to be looked for, and the timer specifies when the expect operation times out. This method is needed for the command functions "expect" to work, and allows "expect" itself to remain unchanged by different interfaces and connection backends. This method returns a tuple either =(None, True)= in the event of a timeout, or =(str, False)= in the event of a capture, where =str= is all the text leading up to the captured string, inclusive. This function is required for interfaces inheriting from /Interactive_Frame/.
 #+BEGIN_SRC python
-    def expectmessage(self, array, timer):
+    def expect_message(self, array, timer):
         """Wait for a message from an array, return either a capture or a timeout."""        
-        results = self.connection.expect(array, timer)
+        results = self._connection.expect([x.encode('ascii') for x in array], timer)
         if results[0] == -1:
             return (None, True) # Return no capture, timeout
         else:
-            return (results[2], False) # Return capture, no timeout
+            return (results[2].decode('ascii'), False) # Return capture, no timeout
 #+END_SRC
 
-The /capturemessage/ method is used in lieu of the /expectmessage/ method for capturing text in the event that we don't know what string to expect. The method below simply waits a short period of time, and then returns all text that arrived during that period.
+The /capture_message/ method is used in lieu of the /expect_message/ method for capturing text in the event that we don't know what string to expect. The method below simply waits a short period of time, and then returns all text that arrived during that period. This function is required for interfaces inheriting from /Interactive_Frame/.
 #+BEGIN_SRC python
-    def capturemessage(self):
+    def capture_message(self):
         """Try to capture text without an "expect" clause."""
         time.sleep(.4)
-        return self.connection.read_very_eager()
+        return self._connection.read_very_eager().decode('ascii')
 #+END_SRC
 
+The command functions below, /username/, /password/ and /address/, are used exclusively to set the attributes that will be read during connection. Note the underscore before the attribute; this is necessary to differentiate the attribute variable from the function, which is itself an attribute of each frame.
+#+BEGIN_SRC python
+################################################################################
+#################### Command functions
+    @command(0, quiet=True)
+    def username(self, username):
+        """Used to set the connection username, if any."""
+        self._username = username        
+
+    @command(0, quiet=True)
+    def password(self, password):
+        """Used to set the connection password, if any."""
+        self._password = password
+
+    @command(0, quiet=True)
+    def address(self, address):
+        """Used to set the connection address."""
+        self._address = address
+
+#+END_SRC
 * scpi
 
 ** MXA
