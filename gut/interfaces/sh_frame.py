@@ -12,19 +12,19 @@ class sh_Frame(Interactive_Frame):
             con = pexpect.spawn(shell)
         except:
             return None
-        con.sendline("PS1=\>; export PS1")
+        con.sendline("PS1=\>\>; export PS1")
         con.expect("export PS1")
-        con.expect(">")        
+        con.expect(">\>") 
         return con
 
     def send_frame(self):
         """Transmit a frame object's content to intended recipient."""
         self._connection.sendline(self._send)
         try:
-            self._connection.read_nonblocking(size=100, timeout=.2)
+            self._connection.read_nonblocking(size=100, timeout=.01)
         except:
             pass
-        time.sleep(.1)
+        # time.sleep(.1)
 
     def expect_message(self, array, timer):
         """Wait for a message from an array, return either a capture or a timeout."""
@@ -37,7 +37,7 @@ class sh_Frame(Interactive_Frame):
         
     def capture_message(self):
         """Try to capture text without an "expect" clause."""
-        self._connection.expect([">", pexpect.TIMEOUT], timeout=1)
+        self._connection.expect([">\>", pexpect.TIMEOUT], timeout=1)
         read_value = self._connection.before
         return read_value.decode("utf-8")
 
