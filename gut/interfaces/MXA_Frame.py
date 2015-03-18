@@ -14,7 +14,8 @@ class MXA_Frame(scpi_Frame):
             con = telnetlib.Telnet(address, 5023, 10)
         except socket.timeout:
             return None
-        time.sleep(.2)
+        time.sleep(.8)
+        con.read_very_eager() 
         return con
 
 ################################################################################
@@ -61,7 +62,7 @@ class MXA_Frame(scpi_Frame):
 
 
     @command(4)
-    def send_val_freq(self, freq, axis = 'Y', marker = 12, unit="MHz"):
+    def val_freq(self, freq, axis = 'Y', marker = 12, unit="MHz"):
         """Get value at frequency"""
         self.marker_mode(marker, 'POS')
         self.marker_axis_set(marker, 'X', str(freq) + " " + str(unit))
@@ -71,11 +72,12 @@ class MXA_Frame(scpi_Frame):
         self.marker_mode(marker, 'OFF')
 
     @command(4)
-    def send_find_peaks(self, source = 1, threshold = 10, excursion = -200, sort = "FREQ"):
+    def find_peaks(self, source = 1, threshold = 10, excursion = -200, sort = "FREQ"):
         """Provide list of Amplitude,Frequency pairs for given threshold and excursion"""
         self._connection.read_very_eager()
         time.sleep(.2)
         self.send_string(":CALC:DATA" + str(source) + ":PEAK? " + str(excursion) + "," + str(threshold) + "," + str(sort))
 
+        
 
     

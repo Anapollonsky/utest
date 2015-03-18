@@ -5,11 +5,11 @@ cmd:
   center_freq: 751
 
 cmd:
-  send_val_freq: 752
+  val_freq: 752
   print_response:
   
 cmd:
-  send_find_peaks:
+  find_peaks:
   expect:
     - "7.52"
   print_response:
