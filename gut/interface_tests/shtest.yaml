@@ -3,10 +3,28 @@ global:
   shell: sh
   
 cmd:
+  send: pwd
+  store_regex:
+    regexes: '/(\w+)\r\n'
+    store_as: 'current_folder'
+  print_response:
+
+cmd:
+  send: pwd
+  check_regex:
+    regexes: '/(\w+)\r\n'
+    check_as: 'current_folder'
+  print_response:
+
+  
+cmd:
   send: ls /
   expect:
     - bin
     - usr
+  store_regex:
+    regexes: '(bin).*\r\n.*(tmp)'
+    store_as: 'random'
   print_response:
 
 cmd:
@@ -14,4 +32,8 @@ cmd:
   expect:
     - bin
     - usr
+  check_regex:
+    regexes: '(bin).*\r\n.*(tmp)'
+    check_as: 'random'    
   print_response:
+    

@@ -319,7 +319,7 @@ class Interactive_Frame(Frame):
                 self.conman.storage[store] = match.groups()
                 self.conman.message(1, "Regex \"" + regex + "\" captured: \"" + str(match.groups()) + "\", stored as \"" + str(store) + "\"")
             else:
-                self.conman.terror(["Expected regex \"" + regex + "\" not present in captured self.", self._response])
+                self.conman.terror(["Expected regex \"" + regex + "\" not present in captured string.", self._response])
 
         # Either loop through all values or deal with single value
         if isinstance(regexes, list):
@@ -355,11 +355,11 @@ class Interactive_Frame(Frame):
                                          "Stored: " + str(self.conman.storage[check]) +
                                          "\nCaptured: " + str(match.groups())])
                 else:
-                    self.conman.message(1, "Regex \"" + regex + "\" stored as \"" + store + "\" matches: \"" + str(match.groups()) + "\"")
+                    self.conman.message(1, "Regex \"" + regex + "\" stored as \"" + check + "\" matches: \"" + str(match.groups()) + "\"")
             else:
-                self.conman.terror(["Expected regex " + regex + " not present in captured self.", self._response]) 
+                self.conman.terror(["Expected regex " + regex + " not present in captured string.", self._response]) 
         if isinstance(regexes, list):
-            for regex, checkin zip(regexes, check_as):
+            for regex, checkin in zip(regexes, check_as):
                 check_regex_single(self, regex, check)
         else:
             check_regex_single(self, regexes, check_as)
