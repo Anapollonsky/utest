@@ -3,7 +3,10 @@ import os
 
 # http://stackoverflow.com/questions/7204805/dictionaries-of-dictionaries-merge
 def recursive_dict_merge(a, b):
-    "merges b into a, performing dumb merge of list. (Don't nest dicts in lists!). a has priority."
+    """ Merges dictionaries a and b
+
+    Performs an in-place merge of dictionaries and their nested lists.
+    a gets priority over b in case of conflicts."""
     if isinstance(a, dict) and isinstance(b, dict):
         for key in b:
             if key in a:
@@ -24,6 +27,7 @@ def recursive_dict_merge(a, b):
 
 # http://stackoverflow.com/questions/566746/how-to-get-console-window-width-in-python
 def getTerminalSize():
+    """ Record the terminal size """
     env = os.environ
     def ioctl_GWINSZ(fd):
         try:

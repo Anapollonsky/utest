@@ -7,13 +7,18 @@ import utils as ut
 from decorators import command, hook
 
 class Frame(object):
-    """Representation of a sent/received frame."""
+    """Representation of a sent/received frame. 
+
+    Contains hooks, command functions, and 'paperwork'."""
 
     default_func_attrs = {"hooks": {}}
     global_permanent = {}
     
     def __init__(self, local_settings, conman):
-        """ Initialize a frame, handling different input argument types and whatnot."""
+        """ Initialize a frame
+
+        Verify that all called command functions are present.
+        Parse arguments to each command function properly."""
         self._response = ""
         self.args = {}
         ut.recursive_dict_merge(local_settings, self.__class__.global_permanent)
@@ -76,7 +81,13 @@ class Frame(object):
         self.conman.update_terminal() # Update the terminal on every frame sent. Not necessary, but performance isn't an issue right now.
                 
     def perform_actions(self):
-        """Will go through all of the properties of a frame, match them up against available functions, and run them with the proper arguments in the order as determined by the functions' priority"""
+        """ Execute all command functions of a frame.
+
+        Goes through frame properties, add them to function queue if arguments for them exist.
+        Sort the function queue, so that functions are executed according to priority.
+        Run hook functions on relevant arguments, with slightly different behaviors depending
+        on whether the hooks variable is a list or a dictionary.
+        Execute each resulting function and argument set."""
 
         # Look through available functions, check if they're referenced on the frame object, and put those that are on a list.
         self.functions = [getattr(self, name) for name in dir(self) if (callable(getattr(self, name)) and hasattr(getattr(self, name), "priority") and name in self.args)]
@@ -109,7 +120,7 @@ class Frame(object):
                 func(self, **func_args)                
 
     def deriveFunctionWithPriority(self, top_function, function, priority, name=None):
-        """Create a copy of an existing command function with a specified priority and optionally name"""
+        """ Create a copy of an existing command function """
         newfunction = types.FunctionType(function.__code__, function.__globals__, name or (function.__name__ + "(" + top_function.__name__ + ")"), function.__defaults__, function.__closure__)
         newfunction.priority = priority
         newfunction.hooks = function.hooks
@@ -120,7 +131,7 @@ class Frame(object):
         return newfunction
                 
     def insertFunction(self, function, args = {}):
-        """Create a copy of a function with priority and insert it in the appropriate place in the command queue."""
+        """ Insert a function in the appropriate place in the command queue """
         self.functions.append(getattr(self, function.__name__))
         self.functions.sort(key=lambda x: x.priority)
         self.args[function.__name__] = args
@@ -129,6 +140,7 @@ class Frame(object):
 #################### Hooks
     @hook()
     def hook_var_replace(self, sequence):
+        """ Hook that replaces appropriate arguments with their variable replacements. """
         if hasattr(self, "_vars"):
             if isinstance(sequence, list): # if input is list, replace in every member
                 for member in sequence:
@@ -145,6 +157,7 @@ class Frame(object):
 
     @hook()
     def hook_show_args(self, string):
+        """ Hook that prints out all arguments """
         if hasattr(self, "_show_args"):
             self.conman.message(1, "Argument: \"" + str(string) + "\"")
         return string
@@ -155,31 +168,32 @@ class Frame(object):
 
     @command(0, [hook_show_args], quiet = True)
     def interface(self, interface):
-        """Used to set the connection interface. """
+        """ Set the connection interface """
         self._interface = interface
 
     @command(0, quiet = True)
     def show_args(self):
+        """ Activate the 'hook_show_args' hook """
         self._show_args = True
 
     @command(1, quiet=True)
     def connect(self):
-        """Used to initiate the connection."""
+        """ Initiate the connection """
         self._connection = self.conman.openconnection(self) 
         
     @command(0, [hook_show_args])
     def timeout(self, timeout):
-        """Used to set the timeout variable, used by expect and expect_regex"""        
+        """ Used to set the timeout variable, used by expect and expect_regex """ 
         self._timeout = timeout
 
     @command(0, [hook_show_args])
     def print_time(self, formatting="%H:%M:%S"):
-        """High-priority time-print function. Optional argument specifies formatting."""
+        """ High-priority time-print function. Optional argument specifies formatting """
         self.conman.message(1, time.strftime(formatting, time.gmtime()))
 
     @command(100, [hook_show_args])
     def log(self, filename):
-        """Low-priority function to log the sent and received messages to a given file."""
+        """ Low-priority function to log the sent and received messages to a given file """
         try:
             infile = open(filename, 'a')
         except IOError:
@@ -189,20 +203,25 @@ class Frame(object):
 
     @command(0, [hook_show_args])
     def vars(self, dict):
-        """Replaces all instances of one substring with another. Reliant on a hook"""
+        """ Replaces all instances of one substring with another. Reliant on a hook """
         self._vars = dict
 
     @command(-1, [hook_show_args])
     def wait_before(self, wait_time):
+        """ Wait before doing anything else """
         time.sleep(wait_time)
 
-    @command(100, [hook_show_args])
+    @command(101, [hook_show_args])
     def wait_after(self, wait_time):
+        """ Wait after doing everything else """
         time.sleep(wait_time) 
         
 class Interactive_Frame(Frame):
+    """ Extension of Frame class that implements functions useful for generic
+    conversations with the target """
 
-    global_permanent = {"capture": None, "connect": None}    
+    # Implicitly run these command functions
+    global_permanent = {"capture": None, "connect": None} 
 ################################################################################
 #################### Hooks
 
@@ -212,21 +231,23 @@ class Interactive_Frame(Frame):
     
     @command(4, [Frame.hook_var_replace, Frame.hook_show_args])
     def send(self, content):
-        """Send the frame."""
+        """ Send the frame. """
         self._send = content
         self.send_frame()
 
     @command(7, [Frame.hook_show_args], quiet=True)
     def capture(self):
-        """Capture some data."""
+        """ Capture some data. """
         self._response += self.capture_message()
 
     @command(100)
     def print_response(self):
+        """ Print the captured response. """
         self.conman.message(1, self._response)
 
     @command(5)
     def print_send(self):
+        """ Print what is being sent with 'send'. """
         self.conman.message(1, self._send)
         
     @command(8, [Frame.hook_show_args])
@@ -245,7 +266,9 @@ class Interactive_Frame(Frame):
 
     @command(6, [Frame.hook_var_replace, Frame.hook_show_args])
     def expect(self, array, regex = False):
-        """Try and capture everything in array before time runs out."""
+        """Expect to capture strings
+
+        Tries to capture all members in an array of strings or regexes before time runs out"""
         diminishing_expect = [re.escape(x) for x in array] if regex == False else array
         timer = self._timeout if hasattr(self, "_timeout") else 10
         if hasattr(self, "_response"):
@@ -270,41 +293,76 @@ class Interactive_Frame(Frame):
         self._timeout = {"timeout": timer}
 
     @command(10, [Frame.hook_var_replace, Frame.hook_show_args])
-    def store_regex(self, regexes):
-        """Capture regexes in responses and store in the storage dictionary. Accepts lists and strings."""
-        def store_regex_single(self, regex):
+    def store_regex(self, regexes, store_as = None):
+        """Capture regexes in responses and store in the storage dictionary.
+
+        The regexes argument is either a string representing a regex or a list of such strings.
+        The optional store_as argument takes either string or a list of strings, same type as
+        the regexes variable, that is used to specify the index under which the capture will be
+        stored.
+        """
+        
+        # Store as the regex index, if not separately set
+        if store_as == None and isinstance(regexes, list):
+            store_as = list(regexes)
+        elif store_as == None:
+            store_as = str(regexes)
+
+        # Ensure that type is now the same
+        if not ((isinstance(regexes, list) and isinstance(store_as, list)) or (isinstance(regexes, str) and isinstance(store_as, str))):
+            self.conman.ferror("Unexpected regexes and store_as: " + str(regexes) + " | " + str(store_as))
+
+        # Function to deal with singular value
+        def store_regex_single(self, regex, store):
             match = re.search(regex, self._response)
             if match:
-                self.conman.storage[regex] = match.groups()
-                self.conman.message(1, "Regex \"" + regex + "\" captured: \"" + str(match.groups()) + "\"")
+                self.conman.storage[store] = match.groups()
+                self.conman.message(1, "Regex \"" + regex + "\" captured: \"" + str(match.groups()) + "\", stored as \"" + str(store) + "\"")
             else:
                 self.conman.terror(["Expected regex \"" + regex + "\" not present in captured self.", self._response])
+
+        # Either loop through all values or deal with single value
         if isinstance(regexes, list):
-            for regex in regexes:
-                store_regex_single(self, regex)
+            for regex, store in zip(regexes, store_as):
+                store_regex_single(self, regex, store)
         elif isinstance(regexes, str):
-            store_regex_single(self, regexes)
+            store_regex_single(self, regexes, store_as)
 
     @command(12, [Frame.hook_var_replace, Frame.hook_show_args])
-    def check_regex(self, regexes):
-        """Verify that the regexes extracted in the current frame match those stored with store_regex.
-        Regexes stored and retrieved based purely on the regex that's used to capture them."""
-        def check_regex_single(self, regex):
+    def check_regex(self, regexes, check_as = None):
+        """Capture regexes in responses and ensure captures match those in the storage dictionary.
+
+        The regexes argument is either a string representing a regex or a list of such strings.
+        The optional check_as argument takes either string or a list of strings, same type as
+        the regexes variable, that is used to specify the index under which the capture will be
+        checked. """
+
+        # Store as the regex index, if not separately set
+        if check_as == None and isinstance(regexes, list):
+            check_as = list(regexes)
+        elif check_as == None:
+            check_as = str(regexes)
+
+        # Ensure that type is now the same
+        if not ((isinstance(regexes, list) and isinstance(check_as, list)) or (isinstance(regexes, str) and isinstance(check_as, str))):
+            self.conman.ferror("Unexpected regexes and check_as: " + str(regexes) + " | " + str(check_as))
+        
+        def check_regex_single(self, regex, check):
             match = re.search(regex, self._response)
             if match:
-                if not (self.conman.storage[regex] == match.groups()):
-                    self.conman.terror(["Mismatch between captured and stored data for regex \"" + regex + "\".",
-                                         "Stored: " + str(self.conman.storage[regex]) +
+                if not (self.conman.storage[check] == match.groups()):
+                    self.conman.terror(["Mismatch between captured and stored data for index \"" + check + "\".",
+                                         "Stored: " + str(self.conman.storage[check]) +
                                          "\nCaptured: " + str(match.groups())])
                 else:
-                    self.conman.message(1, "Regex \"" + regex + "\" matches: \"" + str(match.groups()) + "\"")
+                    self.conman.message(1, "Regex \"" + regex + "\" stored as \"" + store + "\" matches: \"" + str(match.groups()) + "\"")
             else:
                 self.conman.terror(["Expected regex " + regex + " not present in captured self.", self._response]) 
         if isinstance(regexes, list):
-            for regex in regexes:
-                check_regex_single(self, regex)
+            for regex, checkin zip(regexes, check_as):
+                check_regex_single(self, regex, check)
         else:
-            check_regex_single(self, regexes)
+            check_regex_single(self, regexes, check_as)
 
     @command(5, [Frame.hook_show_args])
     def wait_after_send(self, wait_time):

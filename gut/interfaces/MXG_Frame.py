@@ -20,8 +20,7 @@ class MXG_Frame(scpi_Frame):
 ################################################################################
 #################### Command functions
 
-
-    @command(3)        
+    @command(3)
     def set_output(self, state):
         """Set output to 1/on or 0/off"""
         states = ["OFF", "ON"]
@@ -40,13 +39,13 @@ class MXG_Frame(scpi_Frame):
         """Permanently set output center frequency, in MHz by default"""
         self.send_string(":FREQ:MODE CW")
         time.sleep(.1)
-        self._connection.read_very_eager()        
+        self._connection.read_very_eager()
         self.send_string(":FREQ:CW " + str(freq) + " " + str(unit))
 
     @command(3)
     def set_power(self, power, unit="W"):
         """ Set output power """
-        self._connection.read_very_eager()        
+        self._connection.read_very_eager()
         self.send_string(":POW:AMPL " + str(power) + " " + str(unit))
         time.sleep(.4)
 

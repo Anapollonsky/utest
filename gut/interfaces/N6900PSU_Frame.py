@@ -14,13 +14,13 @@ class N6900_Frame(scpi_Frame):
         except socket.timeout:
             return None
         time.sleep(.8)
-        con.read_very_eager()        
+        con.read_very_eager() 
         return con
     
 ################################################################################
 #################### Command functions
 
-    @command(3)        
+    @command(3)
     def set_output(self, state):
         """Set output to 1/on or 0/off"""
         states = ["OFF", "ON"]
@@ -30,41 +30,41 @@ class N6900_Frame(scpi_Frame):
             state = "ON"
         if state.upper() in states:
             state = state.upper()
-        self._connection.read_very_eager()            
+        self._connection.read_very_eager()
         self.send_string("OUTPUT:STATE " + str(state))
-        time.sleep(.4)        
+        time.sleep(.4)
 
-    @command(4)        
+    @command(4)
     def get_output(self):
         """Get output voltage"""
-        self._connection.read_very_eager()        
+        self._connection.read_very_eager()
         self.send_string("OUTPUT:STATE?")
-        time.sleep(.4)        
+        time.sleep(.4)
 
-    @command(3)        
+    @command(3)
     def set_volt(self, volt):
         """Set output voltage"""
-        self._connection.read_very_eager()        
+        self._connection.read_very_eager()
         self.send_string("VOLT " + str(volt))
-        time.sleep(.4)        
+        time.sleep(.4)
 
-    @command(4)        
+    @command(4)
     def get_volt(self):
         """Get output voltage"""
-        self._connection.read_very_eager()        
+        self._connection.read_very_eager()
         self.send_string("VOLT?")
         time.sleep(.4)
         
-    @command(3)        
+    @command(3)
     def set_current_limit(self, limit):
         """Set current limit, in amps"""
         self._connection.read_very_eager() 
         self.send_string("CURR:LIM " + str(limit))
-        time.sleep(.4)        
+        time.sleep(.4)
 
-    @command(4)        
+    @command(4)
     def get_current_limit(self):
         """Get current limit, in amps"""
         self._connection.read_very_eager() 
         self.send_string("CURR:LIM?")
-        time.sleep(.4)        
+        time.sleep(.4)

@@ -48,8 +48,7 @@ class MXA_Frame(scpi_Frame):
             time.sleep(.1) 
         else:
             self.conman.ferror("Invalid parameters passed to marker_axis_get: " + str(ind)+ " | " + str(axis))
-            
-        
+
 ################################################################################
 #################### Command functions
 
@@ -67,7 +66,7 @@ class MXA_Frame(scpi_Frame):
         self.marker_mode(marker, 'POS')
         self.marker_axis_set(marker, 'X', str(freq) + " " + str(unit))
         time.sleep(.2)
-        self._connection.read_very_eager()        
+        self._connection.read_very_eager()
         self.marker_axis_get(marker, axis)
         self.marker_mode(marker, 'OFF')
 
@@ -78,6 +77,3 @@ class MXA_Frame(scpi_Frame):
         time.sleep(.2)
         self.send_string(":CALC:DATA" + str(source) + ":PEAK? " + str(excursion) + "," + str(threshold) + "," + str(sort))
 
-        
-
-    

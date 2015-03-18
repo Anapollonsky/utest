@@ -9,10 +9,13 @@ from interfaces.frame import Frame
 import utils as ut
 
 class Conman:
-    """Singleton class responsible for tracking program state."""
+    """ Singleton class responsible for tracking global program state.
+
+    Keeps track of messaging functions, global frame queue, trace level,
+    global frame options, global data storage, open connections and interfaces."""
         
     def __init__(self, trace):
-        self.connections = []        
+        self.connections = []
         self.trace_level = trace
         self.message_functions = self.create_message_functions(trace)
         self.global_permanent = {}
@@ -22,9 +25,9 @@ class Conman:
         
         
     def get_interface(self, name):
-        """Import specific interface from /interfaces"""
+        """ Find an interface by name """
 
-        # Check if it's already stored
+        # Check if it's already stored in conman
         for interface in self.interfaces:
             if interface.interfacename == name:
                 return interface
@@ -43,7 +46,11 @@ class Conman:
         
     ## Connection Management    
     def openconnection(self, frame):
-        """Open a connection to target and return, or return existing connection."""
+        """Open a connection
+
+        Format connection arguments to take into account defaults, do error checking.
+        Look for existing connection matching parameters, use that if it exists.
+        Create a new connection otherwise. """
         # Get list of arguments, excluding 'self'.
         argspec = inspect.getargspec(frame.establish_connection)
         args = argspec.args[1:]
@@ -104,22 +111,29 @@ class Conman:
             outstr = spacing + color  + u"\u2771" + " " + Fore.RESET + content.replace("\n", "\n" + spacing)
             return outstr
 
+        # Match color and spacing, where spacing is dependent on trace level.
         message_properties = zip([Fore.GREEN, Fore.YELLOW, Fore.CYAN, Fore.RED], ['  ' * k for k in range(3, -1, -1)])
+        # Insert resulting color and spacing into the message_color function for each level
         message_function_list = [functools.partial(message_color, color = color, spacing = spacing) for color, spacing in message_properties]
+        # Select correct subset of generated functions, so that the lower-priority functions are omitted depending on the trace level.
         used_messages = message_function_list[(3 - self.trace_level):]
+        # Insert empty message function into places where functions were omitted
         message_functions = [message0] *  (4 - len(used_messages)) + used_messages
         return message_functions
 
-    def message(self, level, content):        
+    def message(self, level, content):
+        """ Select appropriate message function. """
         outstr = self.message_functions[level - 1](content)
         if outstr: print(outstr)
     
     def ferror(self, content):
+        """ Fatal error """
         print(Fore.RED + ("  FATAL ERROR  ").center(self.terminal["rows"], "#")+ Fore.RESET)
         print(content.strip())
         sys.exit()
 
     def terror(self, content):
+        """ Test error """
         print(Fore.RED + ("  TEST ERROR  ").center(self.terminal["rows"], "#") + Fore.RESET)
         if isinstance(content, str):
             print(content.strip())
@@ -132,5 +146,6 @@ class Conman:
     ## Miscellaneous
     
     def update_terminal(self):
+        """ Update stored terminal size values """
         self.terminal = {}
         self.terminal["rows"], self.terminal["cols"] = ut.getTerminalSize()
