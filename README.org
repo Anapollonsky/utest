@@ -24,12 +24,12 @@ global:
   username: lucent
   password: notpassword
   interface: telnet
+  log: logs/test2log
+  print_response:
 
 cmd:
   send: pwd
   wait_after_send: .5
-  log: logs/test2log
-  print_response:
 #+END_SRC
 
 Note that YAML is, like python itself, reliant on whitespace to designate structure. There are two blocks in the above snippet: a =global= block, and a =cmd= block. Top-level blocks such as these are parsed sequentially -- the =cmd= block is parsed only after GUT is finished with =global=. There are only three types of top-level blocks supported: =global=, =cmd= and =include=. An =include= block is used to include YAML code from another file into the current test. The =global= block specifies global settings that will be merged with every subsequent =cmd= block, until another =global= block overwrites the global settings. As such, the snippet above is equivalent to the following:
@@ -177,7 +177,214 @@ T SET DATA"
 
 #+END_SRC
 
+** Reference
+*** High-Level Blocks
+**** include
+Include blocks are used to read external yaml files and add their contents in-place. No checking is done on whether the file has been visited previously, and so it is possible for the tester to be put into an infinite loop by having two files include each other (generally not recommended!).
 
+Example:
+#+BEGIN_SRC yaml
+include: other_test_file.yaml
+#+END_SRC
+**** global
+Global blocks are used to specify command functions and arguments that are inherited by subsequent =cmd= blocks. In the event that there is a conflict between the two, behavior is determined by the data type of a conflict: If the data type is singular, like a string or an integer, then the =cmd= block value takes precedence; however, if it is a dictionary or a list, a merge is performed.
+
+Example:
+#+BEGIN_SRC yaml
+global:
+  interface: telnet
+  username: andrew
+  password: itsasecret
+  expect: [error]
+
+cmd:
+  send: ls /
+  expect: [bin]
+
+cmd:
+  username: jeff~!
+  password: notsecret
+  send: ls /
+#+END_SRC
+is equivalent to
+#+BEGIN_SRC yaml
+cmd:
+  send: ls /
+  expect: [bin, error]
+  interface: telnet
+  username: andrew
+  password: itsasecret
+
+cmd:
+  username: jeff~!
+  password: notsecret
+  interface: telnet
+  expect: [error]
+  send: ls /
+#+END_SRC
+
+**** cmd
+Command blocks are structures that represent commands being sent to a target. Each command block is composed of several command functions, which perform actions like setting variables, setting up a connection, transmitting data, or analyzing responses. The command functions in every command block are executed in deterministic order, determined by their priority.
+
+Example:
+#+BEGIN_SRC yaml
+cmd:
+  interface: ftp
+  address: 127.0.0.1
+  username: root
+  password: root
+#+END_SRC
+*** Interfaces
+**** Frame
+/Frame/ is an unusable interface that serves as a basis for all other interfaces. It's included in this documentation because all command functions defined under /Frame/ are available for use in every other interface by design.
+
+***** Command Functions
+****** interface
+******* Arguments args
+(string) interface
+******* Description
+Sets the interface. This is a required variable for any command frame.
+******* Properties
+Priority: 0
+Quiet: True
+****** show_args
+******* Arguments
+None
+******* Description
+Activate the hook_show_args hook, which will print out all arguments for all command functions for the =cmd= frame.
+******* Properties
+Priority: 0
+Quiet: True
+****** connect
+******* Arguments
+None
+******* Description
+Establish a connection using all available connection variables. Implicitly included in every frame; does not need to be explicitly included in a frame.
+******* Properties
+Priority: 1
+Quiet: True
+****** print_time
+******* Arguments
+(string) formatting = "%H:%M:%S"
+******* Description
+Prints out the time with an optional argument that specifies the formatting.
+******* Properties
+Priority: 0
+Quiet: False
+****** log
+******* Arguments
+(string) filename
+******* Description
+Append the sent and received strings to the file specified by the /filename/ argument.
+******* Properties
+Priority: 100
+Quiet: False
+****** vars
+******* Arguments
+(dictionary) dict
+******* Description
+Sets the /variable/ dictionary, where every key in the input dictionary is replaced with the corresponding value. The replacement is applied whenever the /hook_var_replace/ hook is applied to a function argument.
+******* Properties 
+Priority: 0
+Quiet: False
+****** wait_before
+******* Arguments
+(float) wait_time
+******* Description
+Wait for a specified period of time, prior to doing anything else.
+******* Properties
+Priority: -1
+Quiet: False
+****** wait_after
+******* Arguments
+(float wait_time
+******* Description
+Wait for a specified period of time, after doing everything else.
+******* Properties 
+Priority: 100
+Quiet: False
+**** Interactive_Frame
+/Interactive_Frame/ is an unusable interface that inherits from /Frame/ and is used for interactive frames -- those where the /send/ command function is present and generic commands can be sent over the interface.
+***** Command Functions
+****** send
+******* Arguments
+(string) content
+******* Description
+Send a string down the interface to the target
+******* Properties
+Priority: 4
+Quiet: True
+****** capture
+******* Arguments
+None
+******* Description
+Try and capture any text that returned from the target.
+******* Properties
+Priority: 7
+Quiet: False
+****** print_response
+******* Arguments
+None
+******* Description
+Print the capture response.
+******* Properties
+Priority: 100
+Quiet: False
+****** print_send
+******* Arguments
+None
+******* Description
+Print the argument passed to the /send/ command function.
+******* Properties
+Priority: 5
+Quiet: False
+****** reject
+******* Arguments
+(string/list[string]) array
+(boolean) regex = False
+******* Description
+For array or every string in array, if it appears in the captured responses, then the test fails. If regex is True, a regex match is checked instead.
+******* Properties
+Priority: 8
+Quiet: False
+****** expect
+******* Arguments
+(string/list[string]) array
+(boolean) regex = False
+(float) timeout = 10
+******* Description
+Tries to capture all strings in /array/ before the the number of seconds specified by /timeout/ expires. If /regex/ is True, the matches are made with regular expressions. If not all members of /array/ are captured, the test fails.
+******* Properties
+Priority: 6
+Quiet: False
+****** store_regex
+******* Arguments
+(string/list[string]) regexes
+(string/list[string]) store_as
+store_as should be of the same type/size as regexes, if specified. If it isn't, it is automatically set to a copy of regexes.
+******* Description
+Try to capture every regex in /regexes/. The contents of every match are stored in the global storage dictionary under the index specified by the corresponding entry in /store_as/.
+******* Properties
+Priority: 10
+Quiet: False
+****** check_regex
+******* Arguments
+(string/list[string]) regexes
+(string/list[string]) check_as
+check_as should be of the same type/size as regexes, if specified. If it isn't, it is automatically set to a copy of regexes.
+******* Description
+Try to capture every regex in /regexes/. The contents of every match are compared, using the key specified by the corresponding entry of /check_as/, to the value stored in the global storage dictionary.
+******* Properties
+Priority: 12
+Quiet: False
+****** wait_after_send
+******* Arguments
+(float) wait_time
+******* Description
+Wait for a specified period of time, after /send/.
+******* Properties 
+Priority: 5
+Quiet: False
 ** Development
 *** Overview
 GUT is composed of several modules:
@@ -289,15 +496,4 @@ The command functions below, /username/, /password/ and /address/, are used excl
 
 #+END_SRC
 * scpi
-
-** MXA
-*** Working:
-Center freq: :SENS:FREQ:CENT 1.94 GHz
-Make marker: CALC:MARK1:MODE POS
-Set marker frequency: CALC:MARK1:X 1.93 GHz
-
-*** Not Working:
-Read marker value: CALC:MARK2:Y?
-Calculate Peak: :CALC:DATA1:PEAK?
-
 
