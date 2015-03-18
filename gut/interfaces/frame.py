@@ -180,11 +180,6 @@ class Frame(object):
     def connect(self):
         """ Initiate the connection """
         self._connection = self.conman.openconnection(self) 
-        
-    @command(0, [hook_show_args])
-    def timeout(self, timeout):
-        """ Used to set the timeout variable, used by expect and expect_regex """ 
-        self._timeout = timeout
 
     @command(0, [hook_show_args])
     def print_time(self, formatting="%H:%M:%S"):
@@ -264,6 +259,11 @@ class Interactive_Frame(Frame):
             elif regex == False and str(array) in self._response:
                 self.conman.terror(["Captured rejected substring in response:" + array.strip(), self._response])                
 
+    @command(0, [Frame.hook_show_args])
+    def timeout(self, timeout):
+        """ Used to set the timeout variable, used by expect and expect_regex """ 
+        self._timeout = timeout
+                
     @command(6, [Frame.hook_var_replace, Frame.hook_show_args])
     def expect(self, array, regex = False):
         """Expect to capture strings
