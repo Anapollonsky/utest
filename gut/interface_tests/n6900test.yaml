@@ -1,0 +1,16 @@
+global:
+  interface: n6900
+  print_response:
+
+cmd:
+  get_volt:
+
+cmd:
+  get_output:
+
+cmd:
+  get_current_limit:
+
+
+
+
