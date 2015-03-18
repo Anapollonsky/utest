@@ -258,19 +258,15 @@ class Interactive_Frame(Frame):
                 self.conman.terror(["Captured rejected regex in response:" + array.strip(), self._response])
             elif regex == False and str(array) in self._response:
                 self.conman.terror(["Captured rejected substring in response:" + array.strip(), self._response])                
-
-    @command(0, [Frame.hook_show_args])
-    def timeout(self, timeout):
-        """ Used to set the timeout variable, used by expect and expect_regex """ 
-        self._timeout = timeout
                 
     @command(6, [Frame.hook_var_replace, Frame.hook_show_args])
-    def expect(self, array, regex = False):
+    def expect(self, array, regex = False, timeout = 10):
         """Expect to capture strings
 
         Tries to capture all members in an array of strings or regexes before time runs out"""
+        if not isinstance(array, list): array = [array]
         diminishing_expect = [re.escape(x) for x in array] if regex == False else array
-        timer = self._timeout if hasattr(self, "_timeout") else 10
+        timer = timeout
         if hasattr(self, "_response"):
             for k in diminishing_expect[:]:
                 if re.search(k, self._response): 
