@@ -48,21 +48,21 @@ class ftp_Frame(Frame):
 
     @command(0)
     def rcwd(self, directory, repeat = True):
-        """Change working directory on target for frame duration."""
-        old_directory = self._connection.pwd()        
+        """ Change working directory on target. """
+        # old_directory = self._connection.pwd()        
         self._connection.cwd(directory)
-        if repeat:
-            newrcwd = self.deriveFunctionWithPriority(self.rcwd, self.rcwd, 100)
-            self.insertFunction(newrcwd, {"directory": old_directory, "repeat": False})
+        # if repeat:
+        #     newrcwd = self.deriveFunctionWithPriority(self.rcwd, self.rcwd, 100)
+        #     self.insertFunction(newrcwd, {"directory": old_directory, "repeat": False})
             
     @command(0)
     def lcwd(self, directory):
-        """Change local working directory for frame duration."""
-        old_directory = os.getcwd()
+        """ Change local working directory. """
+        # old_directory = os.getcwd()
         os.chdir(directory)
-        if repeat:
-            newlcwd = self.deriveFunctionWithPriority(self.lcwd, self.lcwd, 100)
-            self.insertFunction(newlcwd, {"directory": old_directory, "repeat": False})        
+        # if repeat:
+        #     newlcwd = self.deriveFunctionWithPriority(self.lcwd, self.lcwd, 100)
+        #     self.insertFunction(newlcwd, {"directory": old_directory, "repeat": False})        
         
     @command(4) 
     def put(self, filename, binary = True):

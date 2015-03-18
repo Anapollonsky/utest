@@ -50,6 +50,6 @@ class telnet_Frame(Interactive_Frame):
         self._password = password
 
     @command(0, quiet=True)
-    def address(self, address):
+    def address(self, address):  
         """Used to set the connection address."""
         self._address = address
