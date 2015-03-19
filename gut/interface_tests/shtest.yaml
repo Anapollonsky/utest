@@ -1,20 +1,19 @@
 global:
   interface: shell
   shell: sh
+  print_response:
+  send: pwd
   
 cmd:
-  send: pwd
   store_regex:
     regexes: '/(\w+)\r\n'
     store_as: 'current_folder'
-  print_response:
 
 cmd:
-  send: pwd
   check_regex:
     regexes: '/(\w+)\r\n'
     check_as: 'current_folder'
-  print_response:
+
 
   
 cmd:

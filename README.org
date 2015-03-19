@@ -1,18 +1,19 @@
 * Header
 #+LATEX_HEADER: \usepackage[margin=1in]{geometry}
+#+LaTeX_CLASS_OPTIONS: [11pt]
 #+LATEX_HEADER: \usepackage{etoolbox}
-#+LATEX_HEADER: \AtBeginEnvironment{minted}{\fontsize{12}{12}\selectfont}
+#+LATEX_HEADER: \AtBeginEnvironment{minted}{\fontsize{10}{10}\selectfont}
 #+LaTeX_CLASS: code-article 
 #+HTML_HEAD: "<style type="text/css">.org-src-container{ background-color: #181830; color: #DDDDFF; font-size: 130%} </style>"
 #+OPTIONS: title:nil ^:nil
 #+BIND: org-latex-title-command ""
-* GUT Documentation V2
+* GUT Documentation
 ** About
 GUT is a testing platform, particularly well suited for testing inferior hardware over a telnet or ssh connection. GUT provides a flexible framework that allows for easy expansion by the user of existing functionality, while providing a simple, YAML-formatted syntax for running tests.
 
 GUT has a simple structure. Tests are written in YAML format and are passed to the program. Tests specify a sequence, in which each member consists of an /interface/ and a set of corresponding /command functions/. An /interface/ is a class that specifies how connection and subsequent communication is performed. The associated /command functions/ are actions that can be performed for every entry in the sequence. They range from something as simple as setting a connection variable (Setting the username used during login, for example), to actually sending data over the interface or parsing the response. /Command functions/ are flexible, simple to write, and are always executed in a deterministic order.
 
-The flexible interface abstraction provides GUT with the flexibility to be used to develop sophisticated, top-level tests for various systems.
+The flexible interface abstraction provides GUT with the flexibility to be used to develop sophisticated tests for various systems.
 
 ** Usage
 This section will give a brief introduction to writing proper YAML files for GUT with the default YAML parser.
@@ -114,68 +115,25 @@ cmd:
     - "HwVersion: (.*) HwRef"  
 
 global:
-  interface: ard546
-  address: 135.112.98.30  
+  interface: shell
+  shell: sh
+  print_response:
+  send: pwd
   
 cmd:
-  send: |
-    [
-    MESSAGE: TYPE=SET 
-    TRANSACTION: ID=1 
-    ALDDEVDATA: INDEX=1 ALDSUB=1 FIELDNUM=0X21 FIELDLENGTH=6 FIELDDATA=0X44454647,0X4849000
-    ]
-  print_response:
-  expect_regex:
-    - (?i)error
-    - ID
+  store_regex:
+    regexes: '/(\w+)\r\n'
+    store_as: 'current_folder'
+
+cmd:
+  check_regex:
+    regexes: '/(\w+)\r\n'
+    check_as: 'current_folder'
+
 #+END_SRC
 What is this test doing? The first =global= block specifies several options to be used for the subsequent BCI commands: =interface=, =username= and =password=. It also specifies a =send= function, which means that for every subsequent =cmd= block, the message being sent will stay the same. Lastly, due to the =reject= command function, if, in the subsequent messages, the substring "error" occurs in the responses, GUT will throw an error.
 
 Next are two =cmd= blocks. They both specify different board addresses, and one specifies =store_regex=, and the other specifies =check_regex=. The =store_regex= scans the response from the target for an expression matching the regex, and stores multiple values which match the sections within parentheses. The =check_regex= function performs the same match, except that instead of storing it, it compares with existing stored values. Thus, this test checks whether the captured FPGA version, CPLD Version and HwVersion are identical for both targets, without requiring knowing in advance of what those versions are. In order to use these commands (and, indeed, understand the terminology), it is strongly recommended that the user be familiar with regular expressions. 
-
-The next =global= block specifies a new set of global settings that completely overwrites those introduced by the previous =global= block. The subsequent commands are now sent over the ard546 interface to the target at 135.112.98.30. Note that neither =username= or =password= are specified; they are unneeded for the ard546 interface.
-
-Lastly, the ard546 =cmd= block transmits a multi-line string (note the pipe that, in YAML syntax, specifies that a multi-line string is being stored), checks to ensure that the regexes =(?i)error= (case-insensitive "error") and =ID= are match the response, and finally prints the response. Here's the response under maximum verbosity:
-#+BEGIN_SRC 
-========================== Beginning Iteration 1 of 1... ===========================
-                   _______ Entering "./tests/test3.yaml" ________                   
-                   _____________ Sending bci frame ______________                   
-Connected to bci at 135.112.98.16
-Running send
-Running reject
-Running store_regex
-  > Regex "FPGA Version: (.*), CPLD Version: (.{3})" captured: "('0x360b', '0x2')"
-  > Regex "HwVersion: (.*) HwRef" captured: "('P1',)"
-                   _____________ Sending bci frame ______________                   
-Connected to bci at 135.112.98.30
-Running send
-Running reject
-Running check_regex
-  > Regex "FPGA Version: (.*), CPLD Version: (.{3})" matches: "('0x360b', '0x2')"
-  > Regex "HwVersion: (.*) HwRef" matches: "('P1',)"
-                   ____________ Sending ard546 frame ____________                   
-Connected to ard546 at 135.112.98.30
-Running send
-Running expect_regex
-  > Captured in response: ID
-  > Captured in response: (?i)error
-Running print_response
-  > [
-MESSAGE: TYPE=SETRESPONSE
-TRANSACTION: ID=1
-ERRORIND: ATTR=ALDDEVDATA DATAFIELD=ALDSUB ERROR="ACTION NOT ALLOWED" INFO="CANNOT S
-ET DATA"                                                                           
-ERRORIND: ATTR=ALDDEVDATA DATAFIELD=FIELDNUM ERROR="ACTION NOT ALLOWED" INFO="CANNOT
- SET DATA"                                                                         
-ERRORIND: ATTR=ALDDEVDATA DATAFIELD=FIELDLENGTH ERROR="ACTION NOT ALLOWED" INFO="CAN
-NOT SET DATA"                                                                      
-ERRORIND: ATTR=ALDDEVDATA DATAFIELD=FIELDDATA ERROR="ACTION NOT ALLOWED" INFO="CANNO
-T SET DATA"                                                                        
-]
-                   ________ Leaving "./tests/test3.yaml" ________                   
-============================== Iteration 1 Completed ===============================
-
-#+END_SRC
 
 ** Reference
 *** High-Level Blocks
@@ -240,390 +198,380 @@ cmd:
 
 ***** Command Functions
 ****** interface
-******* Arguments args
+******* Arguments:
 (string) interface
-******* Description
+******* Description:
 Sets the interface. This is a required variable for any command frame.
-******* Properties
+******* Properties:
 Priority: 0
 Quiet: True
 ****** show_args
-******* Arguments
+******* Arguments:
 None
-******* Description
+******* Description:
 Activate the hook_show_args hook, which will print out all arguments for all command functions for the =cmd= frame.
-******* Properties
+******* Properties:
 Priority: 0
 Quiet: True
 ****** connect
-******* Arguments
+******* Arguments:
 None
-******* Description
+******* Description:
 Establish a connection using all available connection variables. Implicitly included in every frame; does not need to be explicitly included in a frame.
-******* Properties
+******* Properties:
 Priority: 1
 Quiet: True
 ****** print_time
-******* Arguments
+******* Arguments:
 (string) formatting = "%H:%M:%S"
-******* Description
+******* Description:
 Prints out the time with an optional argument that specifies the formatting.
-******* Properties
+******* Properties:
 Priority: 0
 Quiet: False
 ****** log
-******* Arguments
+******* Arguments:
 (string) filename
-******* Description
+******* Description:
 Append the sent and received strings to the file specified by the /filename/ argument.
-******* Properties
+******* Properties:
 Priority: 100
 Quiet: False
 ****** vars
-******* Arguments
+******* Arguments:
 (dictionary) dict
-******* Description
+******* Description:
 Sets the /variable/ dictionary, where every key in the input dictionary is replaced with the corresponding value. The replacement is applied whenever the /hook_var_replace/ hook is applied to a function argument.
-******* Properties 
+******* Properties: 
 Priority: 0
 Quiet: False
 ****** wait_before
-******* Arguments
+******* Arguments:
 (float) wait_time
-******* Description
+******* Description:
 Wait for a specified period of time, prior to doing anything else.
-******* Properties
+******* Properties:
 Priority: -1
 Quiet: False
 ****** wait_after
-******* Arguments
-(float wait_time
-******* Description
+******* Arguments:
+(float) wait_time
+******* Description:
 Wait for a specified period of time, after doing everything else.
-******* Properties 
+******* Properties: 
 Priority: 100
 Quiet: False
 **** Interactive_Frame
 /Interactive_Frame/ is an unusable interface that inherits from /Frame/ and is used for interactive frames -- those where the /send/ command function is present and generic commands can be sent over the interface.
-***** Command Functions
-****** send
-******* Arguments
+***** send
+****** Arguments:
 (string) content
-******* Description
+****** Description:
 Send a string down the interface to the target
-******* Properties
+****** Properties:
 Priority: 4
 Quiet: True
-****** capture
-******* Arguments
+***** capture
+***** Arguments:
 None
-******* Description
+***** Description:
 Try and capture any text that returned from the target.
-******* Properties
+***** Properties:
 Priority: 7
 Quiet: False
-****** print_response
-******* Arguments
+***** print_response
+****** Arguments:
 None
-******* Description
+****** Description:
 Print the capture response.
-******* Properties
+****** Properties:
 Priority: 100
 Quiet: False
-****** print_send
-******* Arguments
+***** print_send
+****** Arguments:
 None
-******* Description
+****** Description:
 Print the argument passed to the /send/ command function.
-******* Properties
+****** Properties:
 Priority: 5
 Quiet: False
-****** reject
-******* Arguments
-(string/list[string]) array
+***** reject
+****** Arguments:
+(string/list[string]) array,
 (boolean) regex = False
-******* Description
+****** Description:
 For array or every string in array, if it appears in the captured responses, then the test fails. If regex is True, a regex match is checked instead.
-******* Properties
+****** Properties:
 Priority: 8
 Quiet: False
-****** expect
-******* Arguments
-(string/list[string]) array
-(boolean) regex = False
+***** expect
+****** Arguments:
+(string/list[string]) array,
+(boolean) regex = False,
 (float) timeout = 10
-******* Description
+****** Description:
 Tries to capture all strings in /array/ before the the number of seconds specified by /timeout/ expires. If /regex/ is True, the matches are made with regular expressions. If not all members of /array/ are captured, the test fails.
-******* Properties
+****** Properties:
 Priority: 6
 Quiet: False
-****** store_regex
-******* Arguments
-(string/list[string]) regexes
-(string/list[string]) store_as
-store_as should be of the same type/size as regexes, if specified. If it isn't, it is automatically set to a copy of regexes.
-******* Description
-Try to capture every regex in /regexes/. The contents of every match are stored in the global storage dictionary under the index specified by the corresponding entry in /store_as/.
-******* Properties
+***** store_regex
+****** Arguments:
+(string/list[string]) regexes,
+(string/list[string]) store_as,
+****** Description:
+Try to capture every regex in /regexes/. The contents of every match are stored in the global storage dictionary under the index specified by the corresponding entry in /store_as/. /store_as/ should be of the same type/size as /regexes/, if specified. If it isn't, it is automatically set to a copy of /regexes/.
+****** Properties:
 Priority: 10
 Quiet: False
-****** check_regex
-******* Arguments
-(string/list[string]) regexes
-(string/list[string]) check_as
-check_as should be of the same type/size as regexes, if specified. If it isn't, it is automatically set to a copy of regexes.
-******* Description
-Try to capture every regex in /regexes/. The contents of every match are compared, using the key specified by the corresponding entry of /check_as/, to the value stored in the global storage dictionary.
-******* Properties
+***** check_regex
+****** Arguments:
+(string/list[string]) regexes,
+(string/list[string]) check_as,
+
+****** Description:
+Try to capture every regex in /regexes/. The contents of every match are compared, using the key specified by the corresponding entry of /check_as/, to the value stored in the global storage dictionary. /check_as/ should be of the same type/size as /regexes/, if specified. If it isn't, it is automatically set to a copy of /regexes/.
+****** Properties:
 Priority: 12
 Quiet: False
-****** wait_after_send
-******* Arguments
+***** wait_after_send
+****** Arguments:
 (float) wait_time
-******* Description
+****** Description:
 Wait for a specified period of time, after /send/.
-******* Properties 
+****** Properties: 
 Priority: 5
 Quiet: False
 **** telnet_Frame
 A usable interface named "telnet" descended from /Interactive_Frame/ that connects via telnet. If /username/ is provided, the connection waits for the string "ogin" and then sends the provided /username/. If /password/ is provided, the connection waits for the string "assword" and then sends the provided /password/. The default port is 23, but can be changed by calling /port/. This interface uses the built-in =telnetlib=, and is thus cross-platform.
-***** Command Functions
-****** username
-******* Arguments
+***** username
+****** Arguments:
 (string) username
-******* Description
+****** Description:
 Sets the connection username.
-******* Properties
+****** Properties:
 Priority: 0
 Quiet: True
-****** password
-******* Arguments
+***** password
+****** Arguments:
 (string) password
-******* Description
+****** Description:
 Sets the connection password.
-******* Properties
+****** Properties:
 Priority: 0
 Quiet: True
-****** port
-******* Arguments
+***** port
+****** Arguments:
 (int) port
-******* Description
+****** Description:
 Sets the connection port.
-******* Properties
+****** Properties:
 Priority: 0
 Quiet: True
-****** address
-******* Arguments
+***** address
+****** Arguments:
 (string) address
-******* Description
+****** Description:
 Sets the connection address.
-******* Properties
+****** Properties:
 Priority: 0
 Quiet: True
 **** sh_Frame
 A usable interface named "shell" that allows the opening of a local shell and the running of specified commands. Uses =Pexpect= to manage the connection, and so cannot be used on Windows.
-***** Command Functions
-****** shell
-******* Arguments
+***** shell
+****** Arguments:
 (string) shell = 'sh'
-******* Description
+****** Description:
 Sets the connection shell.
-******* Properties
+****** Properties:
 Priority: 0
 Quiet: True
 **** ftp_Frame
 A usable interface named "ftp" descended from /Interactive_Frame/ that connects via ftp. This interface uses the built-in =ftplib=, and is thus cross-platform.
-***** Command Functions
-****** username
-******* Arguments
+***** username
+****** Arguments:
 (string) username
-******* Description
+****** Description:
 Sets the connection username.
-******* Properties
+****** Properties:
 Priority: 0
 Quiet: True
-****** password
-******* Arguments
+***** password
+****** Arguments:
 (string) password
-******* Description
+****** Description:
 Sets the connection password.
-******* Properties
+****** Properties:
 Priority: 0
 Quiet: True
-****** address
-******* Arguments
+***** address
+****** Arguments:
 (string) address
-******* Description
+****** Description:
 Sets the connection address.
-******* Properties
+****** Properties:
 Priority: 0
 Quiet: True
-****** rcwd
-******* Arguments
+***** rcwd
+****** Arguments:
 (string) directory
-******* Description
+****** Description:
 Change the remote working directory.
-******* Properties
+****** Properties:
 Priority: 0
 Quiet: False
-****** lcwd
-******* Arguments
+***** lcwd
+****** Arguments:
 (string) directory
-******* Description
+****** Description:
 Sets the local working directory.
-******* Properties
+****** Properties:
 Priority: 0
 Quiet: False
-****** put
-******* Arguments
-(string) filename
+***** put
+****** Arguments:
+(string) filename,
 (boolean) binary = True
-******* Description
+****** Description:
 Upload the file specified by /filename/ to the target. If binary = True, it is copied byte-for-byte; otherwise, end-of-line characters will be converted between different operating systems.
-******* Properties
+****** Properties:
 Priority: 4
 Quiet: False
-****** get
-******* Arguments
-(string) filename
+***** get
+****** Arguments:
+(string) filename,
 (boolean) binary = True
-******* Description
+****** Description:
 Download the file specified by /filename/ from the target. If binary = True, it is copied byte-for-byte; otherwise, end-of-line characters will be converted between different operating systems.
-******* Properties
+****** Properties:
 Priority: 5
 Quiet: False
 **** bci_Frame
 A usable interface named "bci" that connects to the /bci/ interface on a board.
-***** Command Functions
-****** username
-******* Arguments
+***** username
+****** Arguments:
 (string) username
-******* Description
+****** Description:
 Sets the connection username.
-******* Properties
+****** Properties:
 Priority: 0
 Quiet: True
-****** password
-******* Arguments
+***** password
+****** Arguments:
 (string) password
-******* Description
+****** Description:
 Sets the connection password.
-******* Properties
+****** Properties:
 Priority: 0
 Quiet: True
-****** address
-******* Arguments
+***** address
+****** Arguments:
 (string) address
-******* Description
+****** Description:
 Sets the connection address.
-******* Properties
+****** Properties:
 Priority: 0
 Quiet: True
 **** ARD546_Frame
 A usable interface named "ard546" that connects to the /ard546/ interface on a board.
-***** Command Functions
-****** address
-******* Arguments
+***** address
+****** Arguments:
 (string) address
-******* Description
+****** Description:
 Sets the connection address.
-******* Properties
+****** Properties:
 Priority: 0
 Quiet: True
 **** scpi_Frame
 A unusable interface that serves as the basis for all specialized scpi interfaces.
-***** Command Functions
-****** address
-******* Arguments
+***** address
+****** Arguments:
 (string) address
-******* Description
+****** Description:
 Sets the connection address.
-******* Properties
+****** Properties:
 Priority: 0
 Quiet: True
 **** N6900_Frame
 A usable interface named "n6900" that used to communicate with the power supply n6900.
-***** Command Functions
-****** set_output
-******* Arguments
+***** set_output
+****** Arguments:
 (string/int) state
-******* Description
+****** Description:
 Set the output of the power supply to 1/ON or 0/OFF.
-******* Properties
+****** Properties:
 Priority: 3
 Quiet: False
-****** get_output
-******* Arguments
+***** get_output
+****** Arguments:
 None
-******* Description
+****** Description:
 Get the current output state (Off or On)
-******* Properties
+****** Properties:
 Priority: 4
 Quiet: False
-****** set_volt
-******* Arguments
+***** set_volt
+****** Arguments:
 (float) volt
-******* Description
+****** Description:
 Set the output voltage
-******* Properties
+****** Properties:
 Priority: 3
 Quiet: False
-****** get_volt
-******* Arguments
+***** get_volt
+****** Arguments:
 None
-******* Description
+****** Description:
 Get the output voltage.
-******* Properties
+****** Properties:
 Priority: 4
 Quiet: False
-****** set_current_limit
-******* Arguments
+***** set_current_limit
+****** Arguments:
 (float) limit
-******* Description
+****** Description:
 Set the current limit.
-******* Properties
+****** Properties:
 Priority: 3
 Quiet: False
-****** get_current_limit
-******* Arguments
+***** get_current_limit
+****** Arguments:
 None
-******* Description
+****** Description:
 Get the current limit.
-******* Properties
+****** Properties:
 Priority: 4
 Quiet: False
 **** MXA_Frame
 A usable interface named "mxa" that allows for communication with Keysight MXA signal analyzers.
-***** Command Functions
-****** center_freq
-******* Arguments
-(float) freq
+***** center_freq
+****** Arguments:
+(float) freq,
 (string) unit = "MHz"
-******* Description
+****** Description:
 Set the center frequency.
-******* Properties
+****** Properties:
 Priority: 3
 Quiet: False
-****** val_freq
-******* Arguments
-(float) freq
-(string) axis = 'Y'
-(int) marker = 12
+***** val_freq
+****** Arguments:
+(float) freq,
+(string) axis = 'Y',
+(int) marker = 12,
 (string) unit = "MHz"
-******* Description
+****** Description:
 Get the value at a specified frequency. Reads off the value directly off the Y axis by default, and so the value returns depends on how the Y axis is calibrated.
-******* Properties
+****** Properties:
 Priority: 4
 Quiet: False
-****** center_freq
-******* Arguments
-(int) source = 1
-(float) threshold = 10 (in dB)
-(float) excursion = -200 (in dB)
+***** center_freq
+****** Arguments:
+(int) source = 1,
+(float) threshold = 10 (in dB),
+(float) excursion = -200 (in dB),
 (string) sort = "FREQ"
-******* Description
+****** Description:
 Return a list of (Amplitude, Frequency) pairs, where /source/ specifies the signal source, /threshold/ specifies how far a value is above its neighbors to qualify, /excursion/ is a static minimum value to qualify, and /sort/ specifies the order in which peaks are sorted in the output.
-******* Properties
+****** Properties:
 Priority: 4
 Quiet: False
 ** Development
@@ -736,5 +684,5 @@ The command functions below, /username/, /password/ and /address/, are used excl
         self._address = address
 
 #+END_SRC
-* scpi
+
 
