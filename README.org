@@ -421,9 +421,9 @@ Sets the connection address.
 Priority: 0
 Quiet: True
 **** sh_Frame
-A usable interface named "shell" that allows the opening of a local shell and the running of specified commands.
+A usable interface named "shell" that allows the opening of a local shell and the running of specified commands. Uses =Pexpect= to manage the connection, and so cannot be used on Windows.
 ***** Command Functions
-****** address
+****** shell
 ******* Arguments
 (string) shell = 'sh'
 ******* Description
@@ -491,6 +491,140 @@ Quiet: False
 Download the file specified by /filename/ from the target. If binary = True, it is copied byte-for-byte; otherwise, end-of-line characters will be converted between different operating systems.
 ******* Properties
 Priority: 5
+Quiet: False
+**** bci_Frame
+A usable interface named "bci" that connects to the /bci/ interface on a board.
+***** Command Functions
+****** username
+******* Arguments
+(string) username
+******* Description
+Sets the connection username.
+******* Properties
+Priority: 0
+Quiet: True
+****** password
+******* Arguments
+(string) password
+******* Description
+Sets the connection password.
+******* Properties
+Priority: 0
+Quiet: True
+****** address
+******* Arguments
+(string) address
+******* Description
+Sets the connection address.
+******* Properties
+Priority: 0
+Quiet: True
+**** ARD546_Frame
+A usable interface named "ard546" that connects to the /ard546/ interface on a board.
+***** Command Functions
+****** address
+******* Arguments
+(string) address
+******* Description
+Sets the connection address.
+******* Properties
+Priority: 0
+Quiet: True
+**** scpi_Frame
+A unusable interface that serves as the basis for all specialized scpi interfaces.
+***** Command Functions
+****** address
+******* Arguments
+(string) address
+******* Description
+Sets the connection address.
+******* Properties
+Priority: 0
+Quiet: True
+**** N6900_Frame
+A usable interface named "n6900" that used to communicate with the power supply n6900.
+***** Command Functions
+****** set_output
+******* Arguments
+(string/int) state
+******* Description
+Set the output of the power supply to 1/ON or 0/OFF.
+******* Properties
+Priority: 3
+Quiet: False
+****** get_output
+******* Arguments
+None
+******* Description
+Get the current output state (Off or On)
+******* Properties
+Priority: 4
+Quiet: False
+****** set_volt
+******* Arguments
+(float) volt
+******* Description
+Set the output voltage
+******* Properties
+Priority: 3
+Quiet: False
+****** get_volt
+******* Arguments
+None
+******* Description
+Get the output voltage.
+******* Properties
+Priority: 4
+Quiet: False
+****** set_current_limit
+******* Arguments
+(float) limit
+******* Description
+Set the current limit.
+******* Properties
+Priority: 3
+Quiet: False
+****** get_current_limit
+******* Arguments
+None
+******* Description
+Get the current limit.
+******* Properties
+Priority: 4
+Quiet: False
+**** MXA_Frame
+A usable interface named "mxa" that allows for communication with Keysight MXA signal analyzers.
+***** Command Functions
+****** center_freq
+******* Arguments
+(float) freq
+(string) unit = "MHz"
+******* Description
+Set the center frequency.
+******* Properties
+Priority: 3
+Quiet: False
+****** val_freq
+******* Arguments
+(float) freq
+(string) axis = 'Y'
+(int) marker = 12
+(string) unit = "MHz"
+******* Description
+Get the value at a specified frequency. Reads off the value directly off the Y axis by default, and so the value returns depends on how the Y axis is calibrated.
+******* Properties
+Priority: 4
+Quiet: False
+****** center_freq
+******* Arguments
+(int) source = 1
+(float) threshold = 10 (in dB)
+(float) excursion = -200 (in dB)
+(string) sort = "FREQ"
+******* Description
+Return a list of (Amplitude, Frequency) pairs, where /source/ specifies the signal source, /threshold/ specifies how far a value is above its neighbors to qualify, /excursion/ is a static minimum value to qualify, and /sort/ specifies the order in which peaks are sorted in the output.
+******* Properties
+Priority: 4
 Quiet: False
 ** Development
 *** Overview
