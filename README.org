@@ -134,7 +134,46 @@ cmd:
 What is this test doing? The first =global= block specifies several options to be used for the subsequent BCI commands: =interface=, =username= and =password=. It also specifies a =send= function, which means that for every subsequent =cmd= block, the message being sent will stay the same. Lastly, due to the =reject= command function, if, in the subsequent messages, the substring "error" occurs in the responses, GUT will throw an error.
 
 Next are two =cmd= blocks. They both specify different board addresses, and one specifies =store_regex=, and the other specifies =check_regex=. The =store_regex= scans the response from the target for an expression matching the regex, and stores multiple values which match the sections within parentheses. The =check_regex= function performs the same match, except that instead of storing it, it compares with existing stored values. Thus, this test checks whether the captured FPGA version, CPLD Version and HwVersion are identical for both targets, without requiring knowing in advance of what those versions are. In order to use these commands (and, indeed, understand the terminology), it is strongly recommended that the user be familiar with regular expressions. 
+#+BEGIN_EXAMPLE
 
+❱ Beginning Iteration 1 of 1...
+  ❱ Entering "temp.yaml"
+    ❱ Found interface "bci"
+  ❱ Sending bci frame
+    ❱ Connected with interface "bci"
+    ❱ Running send
+    ❱ Running reject
+    ❱ Running store_regex
+      ❱ Regex "FPGA Version: (.*), CPLD Version: (.{3})" captured: "('0x060b', '0x2')", stored as "FPGA Version: (.*), CPLD Version: (.{3})"
+      ❱ Regex "HwVersion: (.*) HwRef" captured: "('P1',)", stored as "HwVersion: (.*) HwRef"
+  ❱ Sending bci frame
+    ❱ Connected with interface "bci"
+    ❱ Running send
+    ❱ Running reject
+    ❱ Running check_regex
+      ❱ Regex "FPGA Version: (.*), CPLD Version: (.{3})" stored as "FPGA Version: (.*), CPLD Version: (.{3})" matches: "('0x060b', '0x2')"
+      ❱ Regex "HwVersion: (.*) HwRef" stored as "HwVersion: (.*) HwRef" matches: "('P1',)"
+    ❱ Found interface "shell"
+  ❱ Sending shell frame
+    ❱ Running shell
+    ❱ Connected with interface "shell"
+    ❱ Running send
+    ❱ Running store_regex
+      ❱ Regex "/(\w+)\r\n" captured: "('utest',)", stored as "current_folder"
+    ❱ Running print_response
+      ❱ 
+      /home/aapollon/utest
+        ❱ Sending shell frame
+    ❱ Running shell
+    ❱ Running send
+    ❱ Running check_regex
+      ❱ Regex "/(\w+)\r\n" stored as "current_folder" matches: "('utest',)"
+    ❱ Running print_response
+      ❱ 
+      /home/aapollon/utest
+        ❱ Leaving "temp.yaml"
+❱ Iteration 1 Completed
+#+END_EXAMPLE
 ** Reference
 *** High-Level Blocks
 **** include

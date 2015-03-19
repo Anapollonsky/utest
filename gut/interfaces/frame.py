@@ -355,7 +355,7 @@ class Interactive_Frame(Frame):
             else:
                 self.conman.terror(["Expected regex " + regex + " not present in captured string.", self._response]) 
         if isinstance(regexes, list):
-            for regex, checkin in zip(regexes, check_as):
+            for regex, check in zip(regexes, check_as):
                 check_regex_single(self, regex, check)
         else:
             check_regex_single(self, regexes, check_as)
