@@ -7,16 +7,18 @@ from decorators import command
 class telnet_Frame(Interactive_Frame):
     interfacename = "telnet"    
 
-    def establish_connection(self, address, username, password):
+    def establish_connection(self, address, username = None, password = None, port = 23):
         """ Connection procedure for remote shell."""
         try:
-            con = telnetlib.Telnet(address, 23, 10)
+            con = telnetlib.Telnet(address, port, 10)
         except socket.timeout:
             return None
-        con.expect(['ogin'.encode('ascii')])
-        con.write(username.encode('ascii') + b"\n")
-        con.expect(['assword'.encode('ascii')])
-        con.write(password.encode('ascii') + b"\n")
+        if username != None:
+            con.expect(['ogin'.encode('ascii')])
+            con.write(username.encode('ascii') + b"\n")
+        if password != None:
+            con.expect(['assword'.encode('ascii')])
+            con.write(password.encode('ascii') + b"\n")
         time.sleep(.2)
         return con
 
@@ -42,13 +44,18 @@ class telnet_Frame(Interactive_Frame):
     @command(0, quiet=True)
     def username(self, username):
         """Used to set the connection username, if any."""
-        self._username = username        
+        self._username = username 
 
     @command(0, quiet=True)
     def password(self, password):
         """Used to set the connection password, if any."""
         self._password = password
 
+    @command(0, quiet=True)
+    def port(self, port):
+        """Used to set the connection port, if any."""
+        self._port = port 
+        
     @command(0, quiet=True)
     def address(self, address):  
         """Used to set the connection address."""

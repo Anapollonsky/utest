@@ -13,7 +13,7 @@ class ftp_Frame(Frame):
     interfacename = "ftp"
     global_permanent = {"connect": None}
     
-    def establish_connection(self, address, username = None, password = None, port = "21"):
+    def establish_connection(self, address, username = None, password = None):
         """ Connection procedure for remote shell."""
         try:
             
@@ -41,13 +41,8 @@ class ftp_Frame(Frame):
         """Used to set the connection address."""
         self._address = address
 
-    @command(0, quiet=True)
-    def port(self, port):
-        """Used to set the connection port."""
-        self._port = port
-
     @command(0)
-    def rcwd(self, directory, repeat = True):
+    def rcwd(self, directory):
         """ Change working directory on target. """
         # old_directory = self._connection.pwd()        
         self._connection.cwd(directory)

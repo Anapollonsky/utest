@@ -385,6 +385,113 @@ Wait for a specified period of time, after /send/.
 ******* Properties 
 Priority: 5
 Quiet: False
+**** telnet_Frame
+A usable interface named "telnet" descended from /Interactive_Frame/ that connects via telnet. If /username/ is provided, the connection waits for the string "ogin" and then sends the provided /username/. If /password/ is provided, the connection waits for the string "assword" and then sends the provided /password/. The default port is 23, but can be changed by calling /port/. This interface uses the built-in =telnetlib=, and is thus cross-platform.
+***** Command Functions
+****** username
+******* Arguments
+(string) username
+******* Description
+Sets the connection username.
+******* Properties
+Priority: 0
+Quiet: True
+****** password
+******* Arguments
+(string) password
+******* Description
+Sets the connection password.
+******* Properties
+Priority: 0
+Quiet: True
+****** port
+******* Arguments
+(int) port
+******* Description
+Sets the connection port.
+******* Properties
+Priority: 0
+Quiet: True
+****** address
+******* Arguments
+(string) address
+******* Description
+Sets the connection address.
+******* Properties
+Priority: 0
+Quiet: True
+**** sh_Frame
+A usable interface named "shell" that allows the opening of a local shell and the running of specified commands.
+***** Command Functions
+****** address
+******* Arguments
+(string) shell = 'sh'
+******* Description
+Sets the connection shell.
+******* Properties
+Priority: 0
+Quiet: True
+**** ftp_Frame
+A usable interface named "ftp" descended from /Interactive_Frame/ that connects via ftp. This interface uses the built-in =ftplib=, and is thus cross-platform.
+***** Command Functions
+****** username
+******* Arguments
+(string) username
+******* Description
+Sets the connection username.
+******* Properties
+Priority: 0
+Quiet: True
+****** password
+******* Arguments
+(string) password
+******* Description
+Sets the connection password.
+******* Properties
+Priority: 0
+Quiet: True
+****** address
+******* Arguments
+(string) address
+******* Description
+Sets the connection address.
+******* Properties
+Priority: 0
+Quiet: True
+****** rcwd
+******* Arguments
+(string) directory
+******* Description
+Change the remote working directory.
+******* Properties
+Priority: 0
+Quiet: False
+****** lcwd
+******* Arguments
+(string) directory
+******* Description
+Sets the local working directory.
+******* Properties
+Priority: 0
+Quiet: False
+****** put
+******* Arguments
+(string) filename
+(boolean) binary = True
+******* Description
+Upload the file specified by /filename/ to the target. If binary = True, it is copied byte-for-byte; otherwise, end-of-line characters will be converted between different operating systems.
+******* Properties
+Priority: 4
+Quiet: False
+****** get
+******* Arguments
+(string) filename
+(boolean) binary = True
+******* Description
+Download the file specified by /filename/ from the target. If binary = True, it is copied byte-for-byte; otherwise, end-of-line characters will be converted between different operating systems.
+******* Properties
+Priority: 5
+Quiet: False
 ** Development
 *** Overview
 GUT is composed of several modules:
