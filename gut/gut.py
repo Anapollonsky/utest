@@ -9,7 +9,7 @@ from interfaces.frame import Frame
 
 colorama.init()
 
-VERSION = 1
+VERSION = 2
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser()
