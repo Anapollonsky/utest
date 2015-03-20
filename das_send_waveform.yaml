@@ -1,0 +1,67 @@
+global:
+  interface: bci
+  username: lucent
+  password: password
+  vars:
+    waveform: "LTE_5MHz_1Carrier.bin"
+
+### Set LO Frequency
+
+# Device, freq-inKhz, where dev 0=TX0, 1 = TX1 ,2 = RX0, 3 = RX1
+cmd:
+  send: "/app/rsl/spi/spiSetLoFreq 0, 75000"
+  wait_after: .2
+  
+# FTP From server to local, from local to board
+# Load waveform
+cmd:
+  interface: ftp
+  address: 135.112.98.252
+  username: andrew
+  password: password
+  get: waveform
+
+cmd:
+  interface: ftp
+  username: lucent
+  password: password
+  rcwd: /tmp/
+  put: waveform
+  
+cmd:
+  send: "/pltf/bsp/loadfpgasram"
+  expect: "filename"
+cmd:
+  send: "/tmp/waveform"
+  expect: "dram"
+cmd:
+  send: "3"
+  expect: "offset"
+  print_response:  
+cmd:
+  send: "0x00"
+  expect: "successful"
+  print_response:
+
+global:
+  interface: bci
+  username: lucent
+  password: password
+  expect: SUCCESS
+  
+cmd:
+  send: /pltf/txpath/fpgawrite 0x18 0x0
+cmd:
+  send: /pltf/txpath/fpgawrite 0x19 0x0f1f
+cmd:
+  send: /pltf/txpath/fpgawrite 0xc 0xF00
+cmd:
+  send: /pltf/txpath/fpgawrite 0x1f 0x0c24
+cmd:
+  send: /pltf/txpath/fpgawrite 0x1e 0xffff
+cmd:
+  send: /pltf/txpath/fpgawrite 0x10 0x2004
+cmd:
+  send: /pltf/txpath/fpgawrite 0x11 0x2D34
+cmd:
+  send: /pltf/txpath/fpgawrite 0x0 0x4077

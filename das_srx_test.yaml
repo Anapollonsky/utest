@@ -1,0 +1,52 @@
+global:
+  interface: bci
+  username: lucent
+  password: password
+
+#tx1 forward, do 4 steps
+cmd:
+  send: "/pltf/txPath/setTxRocGpio 0 4 1"
+cmd:
+  send: "/pltf/txPath/setTxRocGpio 0 5 1"
+cmd:
+  send: "/pltf/txPath/setTxRocGpio 0 6 0"
+cmd:
+  send: "/pltf/txPath/setTxRocGpio 0 7 0"
+#tx2 forward, do 4 steps
+cmd:
+  send: "/pltf/txPath/setTxRocGpio 0 4 0"
+cmd:
+  send: "/pltf/txPath/setTxRocGpio 0 5 0"
+cmd:
+  send: "/pltf/txPath/setTxRocGpio 0 6 0"
+cmd:
+  send: "/pltf/txPath/setTxRocGpio 0 7 0"
+#disable all paths
+cmd:
+  send: "/pltf/txPath/setTxRocGpio 0 4 0"
+cmd:
+  send: "/pltf/txPath/setTxRocGpio 0 5 1"
+cmd:
+  send: "/pltf/txPath/setTxRocGpio 0 6 0"
+cmd:
+  send: "/pltf/txPath/setTxRocGpio 0 7 0"
+
+# srx attenuation
+cmd:
+  send: "/pltf/txPath/setAttn 8 255"
+
+# do capture
+cmd:
+  send: /pltf/rxpath/fpgawrite 0x204 0x0
+cmd:
+  send: /pltf/rxpath/fpgawrite 0xd 0x40
+cmd:
+  send: /pltf/rxpath/fpgawrite 0x12 0x3
+cmd:
+  send: /pltf/rxpath/fpgawrite 0x0 0xc077
+cmd:
+  send: /pltf/rxpath/fpgawrite 0x12 0x0
+
+cmd:
+  send: "/pltf/bsp/readfpgasram /tmp/srx_capture.bin 12288000 2 0x01800000"
+

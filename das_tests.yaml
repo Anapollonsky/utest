@@ -1,19 +1,10 @@
-global:
-  interface: bci
-  username: lucent
-  password: password
 
-## Version Checks
-cmd:
-  send: /oam/appversion
-  expect: "Tue Mar 17"
+include: das_bci_checks.yaml
 
-cmd:
-  send: /oam/hwversion
-  expect: "FPGA Version: 0x060b"
+include: das_txrx_setup.yaml
 
-### Set LO Frequency
-cmd:
-  # Device, freq-inKhz, where dev 0=TX0, 1 = TX1 ,2 = RX0, 3 = RX1
-  # send: /app/rsl/spi/spiSetLoFreq0, 75000
-  
+include: das_send_waveform.yaml
+
+# Use MXA to check power level
+
+# Same for TX1 and TX2
