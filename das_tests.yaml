@@ -1,0 +1,19 @@
+global:
+  interface: bci
+  username: lucent
+  password: password
+
+## Version Checks
+cmd:
+  send: /oam/appversion
+  expect: "Tue Mar 17"
+
+cmd:
+  send: /oam/hwversion
+  expect: "FPGA Version: 0x060b"
+
+### Set LO Frequency
+cmd:
+  # Device, freq-inKhz, where dev 0=TX0, 1 = TX1 ,2 = RX0, 3 = RX1
+  # send: /app/rsl/spi/spiSetLoFreq0, 75000
+  
