@@ -15,6 +15,7 @@ GUT has a simple structure. Tests are written in YAML format and are passed to t
 
 The flexible interface abstraction provides GUT with the flexibility to be used to develop sophisticated tests for various systems.
 
+This version of the documentation is consistent with Version 2 of GUT.
 ** Usage
 This section will give a brief introduction to writing proper YAML files for GUT with the default YAML parser.
 
@@ -134,8 +135,10 @@ cmd:
 What is this test doing? The first =global= block specifies several options to be used for the subsequent BCI commands: =interface=, =username= and =password=. It also specifies a =send= function, which means that for every subsequent =cmd= block, the message being sent will stay the same. Lastly, due to the =reject= command function, if, in the subsequent messages, the substring "error" occurs in the responses, GUT will throw an error.
 
 Next are two =cmd= blocks. They both specify different board addresses, and one specifies =store_regex=, and the other specifies =check_regex=. The =store_regex= scans the response from the target for an expression matching the regex, and stores multiple values which match the sections within parentheses. The =check_regex= function performs the same match, except that instead of storing it, it compares with existing stored values. Thus, this test checks whether the captured FPGA version, CPLD Version and HwVersion are identical for both targets, without requiring knowing in advance of what those versions are. In order to use these commands (and, indeed, understand the terminology), it is strongly recommended that the user be familiar with regular expressions. 
-#+BEGIN_EXAMPLE
 
+The next three blocks include a =global= block that specifies a few functions to be run, including the string to be sent down the =shell= interface and a request that the output be printed in each frame. The subsequent two =cmd= blocks include a new pair of /store_regex/ and /check_regex/, where the matches are now being stored in global storage under the string "current_folder". Below is example output when the YAML code above is run under full verbosity.
+
+#+BEGIN_EXAMPLE
 ❱ Beginning Iteration 1 of 1...
   ❱ Entering "temp.yaml"
     ❱ Found interface "bci"
@@ -144,15 +147,19 @@ Next are two =cmd= blocks. They both specify different board addresses, and one 
     ❱ Running send
     ❱ Running reject
     ❱ Running store_regex
-      ❱ Regex "FPGA Version: (.*), CPLD Version: (.{3})" captured: "('0x060b', '0x2')", stored as "FPGA Version: (.*), CPLD Version: (.{3})"
-      ❱ Regex "HwVersion: (.*) HwRef" captured: "('P1',)", stored as "HwVersion: (.*) HwRef"
+      ❱ Regex "FPGA Version: (.*), CPLD Version: (.{3})" captured: "('0x060b', '0x2')",
+                    stored as "FPGA Version: (.*), CPLD Version: (.{3})"
+      ❱ Regex "HwVersion: (.*) HwRef" captured: "('P1',)", stored as "HwVersion: (.*) 
+                    HwRef"
   ❱ Sending bci frame
     ❱ Connected with interface "bci"
     ❱ Running send
     ❱ Running reject
     ❱ Running check_regex
-      ❱ Regex "FPGA Version: (.*), CPLD Version: (.{3})" stored as "FPGA Version: (.*), CPLD Version: (.{3})" matches: "('0x060b', '0x2')"
-      ❱ Regex "HwVersion: (.*) HwRef" stored as "HwVersion: (.*) HwRef" matches: "('P1',)"
+      ❱ Regex "FPGA Version: (.*), CPLD Version: (.{3})" stored as "FPGA Version: (.*),
+                     CPLD Version: (.{3})" matches: "('0x060b', '0x2')"
+      ❱ Regex "HwVersion: (.*) HwRef" stored as "HwVersion: (.*) HwRef" matches: 
+                    "('P1',)"
     ❱ Found interface "shell"
   ❱ Sending shell frame
     ❱ Running shell
@@ -649,7 +656,7 @@ Interfaces are objects that define a connection and how to perform certain opera
 
 The header of the class includes any required objects and defines the class as inheriting from the /Interactive_Frame/ class. The /Interactive_Frame/ class itself inherits from /Frame/ and defines useful functions to allow the user to interact directly with the target, instead of relying on built-in functions to format and send any messages. 
 
-The header also defines a class =interfacename=, which is the string that will be used by the rest of the program to differentiate between different interfaces. As such, the interfacename should be distinct from that of every other interface. Note that this particular interface uses telnetlib -- no code outside of the interfaces should know of the details of how the communication protocol works.
+The header also defines a class =interfacename=, which is the string that will be used by the rest of the program to differentiate between different interfaces. As such, the =interfacename= should be distinct from that of every other interface. Note that this particular interface uses /telnetlib/ -- no code outside of the interfaces should know of the details of how the communication protocol works.
 #+BEGIN_SRC python
 import time
 import telnetlib
@@ -661,23 +668,27 @@ class telnet_Frame(Interactive_Frame):
     interfacename = "telnet"    
 #+END_SRC
 
-The /establishConnection/ method is used to establish a ready-to-use connection. The interface returns a connection object that will be stored in conman, and used whenever another command wants to use an interface with the same arguments. This function is required for all interfaces.
+Apart from /command functions/, each interface includes methods which abstract away certain operations. Normal frames inheriting from /Frame/ require the /establish_connection/ method, shown below. Frames inheriting from /Interactive_Frame/, such as this one, also require /send_frame/, /expect_message/ and /capture_message/, which will be shown shortly.
+
+The /establish_connection/ method is used to establish a ready-to-use connection. The interface returns a connection object that will be stored in conman, and used whenever another command wants to use an interface with the same arguments. This function is required for all interfaces.
 #+BEGIN_SRC python
-    def establish_connection(self, address, username, password):
+    def establish_connection(self, address, username = None, password = None, port = 23):
         """ Connection procedure for remote shell."""
         try:
-            con = telnetlib.Telnet(address, 23, 10)
+            con = telnetlib.Telnet(address, port, 10)
         except socket.timeout:
             return None
-        con.expect(['ogin'.encode('ascii')])
-        con.write(username.encode('ascii') + b"\n")
-        con.expect(['assword'.encode('ascii')])
-        con.write(password.encode('ascii') + b"\n")
+        if username != None:
+            con.expect(['ogin'.encode('ascii')])
+            con.write(username.encode('ascii') + b"\n")
+        if password != None:
+            con.expect(['assword'.encode('ascii')])
+            con.write(password.encode('ascii') + b"\n")
         time.sleep(.2)
         return con
 #+END_SRC
 
-The /send_frame/ method accepts no arguments apart from /self/, and is responsible for sending the contents of =self.send["content"]= down the connection. This function is required for interfaces inheriting from /Interactive_Frame/.
+The /send_frame/ method accepts no arguments apart from /self/, and is responsible for sending the contents of =self._send= down the connection. This function is required for interfaces inheriting from /Interactive_Frame/.
 #+BEGIN_SRC python
     def send_frame(self):
         """Transmit a frame object's content to intended recipient."""
@@ -695,7 +706,7 @@ The /expect_message/ method accepts two arguments: an array, and a timer. The ar
             return (results[2].decode('ascii'), False) # Return capture, no timeout
 #+END_SRC
 
-The /capture_message/ method is used in lieu of the /expect_message/ method for capturing text in the event that we don't know what string to expect. The method below simply waits a short period of time, and then returns all text that arrived during that period. This function is required for interfaces inheriting from /Interactive_Frame/.
+The /capture_message/ method is used in lieu of the /expect_message/ method for capturing text in the event that we don't know what string to expect. The method below simply waits a short period of time, and then returns all text that arrived during that period. Implementations of /capture_message/ for other interfaces may choose to implement this basic behavior differently. This function is required for interfaces inheriting from /Interactive_Frame/.
 #+BEGIN_SRC python
     def capture_message(self):
         """Try to capture text without an "expect" clause."""
@@ -718,10 +729,15 @@ The command functions below, /username/, /password/ and /address/, are used excl
         self._password = password
 
     @command(0, quiet=True)
+    def port(self, port):
+        """Used to set the connection port, if any."""
+        self._port = port 
+
+    @command(0, quiet=True)
     def address(self, address):
         """Used to set the connection address."""
         self._address = address
 
 #+END_SRC
 
-
+There are many more command functions available to the =telnet= interface, but these are all defined in /Frame/ and /Interactive_Frame/, and so do not have to be redefined or even mentioned here.
