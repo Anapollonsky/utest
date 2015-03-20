@@ -1,0 +1,19 @@
+global:
+  interface: mxa
+  address: 135.112.98.228
+  vars:
+    tx_freq: 300000
+
+cmd:
+  center_freq: 300000
+
+
+cmd:
+  val_freq: 300000
+  print_response:
+
+cmd:
+  find_peaks:
+  print_response:
+  # expect: 3.00
+    

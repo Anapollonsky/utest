@@ -2,17 +2,18 @@ global:
   interface: bci
   username: lucent
   password: password
-  expect: gpioIdx
   vars:
-    rx_freq: 35000
+    rx_freq: 300000
 # rx frequency
 
 cmd:
   send: "/pltf/txPath/setLoFreq 2 rx_freq"
+  expect: OK
 
 # set rx attenuation
 cmd:
   send: "/pltf/txPath/SetAttn 10 255"
+  expect: OK
 
 
 global:
@@ -42,14 +43,19 @@ cmd:
 cmd: 
   send: "/pltf/rxpath/fpgawrite 0x12 0x0"
 
+global:
+  interface: bci
+  username: lucent
+  password: password
+
 cmd:
   send: "/pltf/bsp/readfpgasram /tmp/tx_capture.bin 6144000 2 0x01800000"
+  print_response:
   wait_after: 2
 
 cmd:
   interface: ftp
-  address: 135.112.98.252
-  username: andrew
+  username: lucent
   password: password
   get: /tmp/tx_capture.bin
 

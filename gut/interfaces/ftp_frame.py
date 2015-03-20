@@ -36,21 +36,21 @@ class ftp_Frame(Frame):
         """Used to set the connection password, if any."""
         self._password = password
 
-    @command(0, quiet=True)
+    @command(0, [Frame.hook_var_replace, Frame.hook_show_args], quiet=True)
     def address(self, address):
         """Used to set the connection address."""
         self._address = address
 
-    @command(0)
+    @command(2, [Frame.hook_var_replace, Frame.hook_show_args])
     def rcwd(self, directory):
         """ Change working directory on target. """
-        # old_directory = self._connection.pwd()        
+        # old_directory = self._connection.pwd()
         self._connection.cwd(directory)
         # if repeat:
         #     newrcwd = self.deriveFunctionWithPriority(self.rcwd, self.rcwd, 100)
         #     self.insertFunction(newrcwd, {"directory": old_directory, "repeat": False})
             
-    @command(0)
+    @command(2, [Frame.hook_var_replace, Frame.hook_show_args])
     def lcwd(self, directory):
         """ Change local working directory. """
         # old_directory = os.getcwd()
@@ -59,7 +59,7 @@ class ftp_Frame(Frame):
         #     newlcwd = self.deriveFunctionWithPriority(self.lcwd, self.lcwd, 100)
         #     self.insertFunction(newlcwd, {"directory": old_directory, "repeat": False})        
         
-    @command(4) 
+    @command(4, [Frame.hook_var_replace, Frame.hook_show_args]) 
     def put(self, filename, binary = True):
         """Transfer a file to the server. Binary mode by default."""
         if binary:
@@ -67,7 +67,7 @@ class ftp_Frame(Frame):
         else:
             self._connection.storlines("STOR %s" % ntpath.basename(filename), open(filename, 'r'))            
         
-    @command(5) 
+    @command(5, [Frame.hook_var_replace, Frame.hook_show_args]) 
     def get(self, filename, binary = True):
         """Transfer a file from the server. Binary mode by default."""
         if binary:        

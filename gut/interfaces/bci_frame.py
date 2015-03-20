@@ -23,7 +23,7 @@ class BCI_Frame(Interactive_Frame):
 
     def send_frame(self):
         """Transmit a frame object's content to intended recipient."""
-        self._connection.write(self._send.encode('ascii') + b"\n")        
+        self._connection.write(self._send.encode('ascii') + b"\n")
 
     def expect_message(self, array, timer):
         """Wait for a message from an array, return either a capture or a timeout."""
@@ -35,7 +35,7 @@ class BCI_Frame(Interactive_Frame):
 
     def capture_message(self):
         """Try to capture text without an "expect" clause."""
-        time.sleep(.4)
+        time.sleep(.1)
         return self._connection.read_very_eager().decode('ascii')        
 
 ################################################################################

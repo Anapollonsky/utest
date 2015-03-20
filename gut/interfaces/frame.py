@@ -196,7 +196,7 @@ class Frame(object):
         infile.write(self._send + "\n\n" + self._response + "\n\n")
         infile.close()
 
-    @command(0, [hook_show_args])
+    @command(0, [hook_show_args], quiet = True)
     def vars(self, dict):
         """ Replaces all instances of one substring with another. Reliant on a hook """
         self._vars = dict
@@ -266,7 +266,7 @@ class Interactive_Frame(Frame):
         Tries to capture all members in an array of strings or regexes before time runs out"""
         if not isinstance(array, list): array = [array]
         diminishing_expect = [re.escape(x) for x in array] if regex == False else array
-        timer = timeout
+        timer = int(timeout)
         if hasattr(self, "_response"):
             for k in diminishing_expect[:]:
                 if re.search(k, self._response): 

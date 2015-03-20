@@ -73,8 +73,7 @@ cmd:
 
 cmd:
   interface: ftp
-  address: 135.112.98.252
-  username: andrew
+  username: lucent
   password: password
   get: /tmp/srx_capture.bin
 
