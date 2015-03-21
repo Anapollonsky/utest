@@ -2,7 +2,8 @@ global:
   interface: bci
   username: lucent
   password: password
-
+  expect: gpioIdx
+  
 #tx1 forward, do 4 steps
 cmd:
   send: "/pltf/txPath/setTxRocGpio 0 4 1"
@@ -32,21 +33,49 @@ cmd:
   send: "/pltf/txPath/setTxRocGpio 0 7 0"
 
 # srx attenuation
+global:
+  interface: bci
+  username: lucent
+  password: password
+
 cmd:
   send: "/pltf/txPath/setAttn 8 255"
+  wait_after: .4
 
 # do capture
+
+global:
+  interface: bci
+  username: lucent
+  password: password
+  expect: SUCCESS
+
 cmd:
-  send: /pltf/rxpath/fpgawrite 0x204 0x0
+  send: "/pltf/rxpath/fpgawrite 0x204 0x0"
 cmd:
-  send: /pltf/rxpath/fpgawrite 0xd 0x40
+  send: "/pltf/rxpath/fpgawrite 0xd 0x40"
 cmd:
-  send: /pltf/rxpath/fpgawrite 0x12 0x3
+  send: "/pltf/rxpath/fpgawrite 0x12 0x3"
 cmd:
-  send: /pltf/rxpath/fpgawrite 0x0 0xc077
+  send: "/pltf/rxpath/fpgawrite 0x0 0xc077"
 cmd:
-  send: /pltf/rxpath/fpgawrite 0x12 0x0
+  send: "/pltf/rxpath/fpgawrite 0x12 0x0"
+
+
+global:
+  interface: bci
+  username: lucent
+  password: password
 
 cmd:
   send: "/pltf/bsp/readfpgasram /tmp/srx_capture.bin 12288000 2 0x01800000"
+  wait_after: 2
+
+cmd:
+  interface: ftp
+  address: 135.112.98.252
+  username: andrew
+  password: password
+  get: /tmp/srx_capture.bin
+
 

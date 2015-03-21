@@ -3,17 +3,31 @@ global:
   username: lucent
   password: password
   vars:
-    waveform: "LTE_5MHz_1Carrier.bin"
+    tx_freq: 350000
+    waveform: "LTE_5MHz_1Carrier.bin"    
 
-### Set LO Frequency
+# Set synth
+cmd: 
+  send: "/pltf/txPath/fpgawrite 0x206 0x5000"
 
-# Device, freq-inKhz, where dev 0=TX0, 1 = TX1 ,2 = RX0, 3 = RX1
+# ensure lock
 cmd:
-  send: "/app/rsl/spi/spiSetLoFreq 0, 75000"
-  wait_after: .2
-  
-# FTP From server to local, from local to board
-# Load waveform
+  send: /pltf/txPath/pllStatus
+#check ext synth 1 is locked
+# set tx lo
+cmd:
+  send: /pltf/txPath/setLoFreq 0 tx_freq
+
+# set tx attenuation (vva and roc)  
+cmd:
+  # around 400 (vva)
+  send: "/pltf/txPath/setAttn 4 400"
+
+cmd:
+  # around 80 (roc)
+  send: "/pltf/txPath/setAttn 1 80"
+
+# Load waveform and play
 cmd:
   interface: ftp
   address: 135.112.98.252
@@ -27,22 +41,11 @@ cmd:
   password: password
   rcwd: /tmp/
   put: waveform
-  
-cmd:
-  send: "/pltf/bsp/loadfpgasram"
-  expect: "filename"
-cmd:
-  send: "/tmp/waveform"
-  expect: "dram"
-cmd:
-  send: "3"
-  expect: "offset"
-  print_response:  
-cmd:
-  send: "0x00"
-  expect: "successful"
-  print_response:
 
+cmd:
+  send: "/pltf/bsp/loadfpgasram waveform 3 0x0"
+  expect: "filename"
+  
 global:
   interface: bci
   username: lucent
