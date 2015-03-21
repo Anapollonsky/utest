@@ -1,0 +1,10 @@
+
+include: das_bci_checks.yaml
+
+include: das_txrx_setup.yaml
+
+include: das_send_waveform.yaml
+
+# Use MXA to check power level
+
+# Same for TX1 and TX2

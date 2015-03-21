@@ -1,0 +1,29 @@
+global:
+  interface: bci
+  username: lucent
+  password: password
+  vars:
+    builddate: "Thu Mar 19"
+    fpgaver: "FPGA Version: 0x360b"
+
+## Version Checks
+cmd:
+  send: /oam/appversion
+  # expect: builddate
+
+cmd:
+  send: /oam/hwversion
+  # expect: fpgaver
+
+cmd:
+  send: /pltf/flashdev/getModVersionInfoShow
+
+  
+## Basic Command Checks
+cmd:
+  send: "/pltf/i2c/eeprom_filter/read 0 10"
+  expect: "00000000"
+
+cmd:
+  send: "/pltf/i2c/eeprom_filter/read 60000 20"
+  expect: "ea60"
