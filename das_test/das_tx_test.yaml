@@ -3,9 +3,12 @@ global:
   username: lucent
   password: password
   vars:
-    tx_freq: 750000 
-    waveform: "LTE_5MHz_1Carrier.bin"    
-
+    TX_FREQ: 1900 
+    VVA_ATTEN: 400
+    TXROC_ATTEN: 90
+    TXTEST_WAVE: "lte5MHz_122p88_minus18dBFs.bin"    
+    TXTEST_BW: 5
+    
 # Set synth
 cmd: 
   send: "/pltf/txPath/fpgawrite 0x206 0x5000"
@@ -16,41 +19,40 @@ cmd:
   send: /pltf/txPath/pllStatus
   expect:
     - "ext synth 1 is locked"
-    - "ext synth 2 is locked"
 
 # set tx lo
 cmd:
-  send: /pltf/txPath/setLoFreq 0 tx_freq
+  send: "/pltf/txPath/setLoFreq 0 TX_FREQ"
   expect: OK
 
 # set tx attenuation (vva and roc)  
 cmd:
   # around 400 (vva)
-  send: "/pltf/txPath/setAttn 4 400"
+  send: "/pltf/txPath/setAttn 4 VVA_ATTEN"
   expect: OK
 
 cmd:
   # around 80 (roc)
-  send: "/pltf/txPath/setAttn 1 80"
+  send: "/pltf/txPath/setAttn 1 TXROC_ATTEN"
   expect: OK
 
 # Load waveform and play
-cmd:
-  interface: ftp
-  address: 135.112.98.252
-  username: andrew
-  password: password
-  get: waveform
+# cmd:
+#   interface: ftp
+#   address: 135.112.98.252
+#   username: andrew
+#   password: password
+#   get: waveform
 
 cmd:
   interface: ftp
   username: lucent
   password: password
   rcwd: /tmp/
-  put: waveform
+  put: TXTEST_WAVE 
 
 cmd:
-  send: "/pltf/bsp/loadfpgasram waveform 3 0x0"
+  send: "/pltf/bsp/loadfpgasram TXTEST_WAVE 3 0x0"
   expect: "filename"
   
 global:
@@ -65,5 +67,5 @@ cmd: /pltf/txpath/fpgawrite 0xc 0xF00
 cmd: /pltf/txpath/fpgawrite 0x1f 0x0c24
 cmd: /pltf/txpath/fpgawrite 0x1e 0xffff
 cmd: /pltf/txpath/fpgawrite 0x10 0x2004
-cmd: /pltf/txpath/fpgawrite 0x11 0x2D34
-cmd: /pltf/txpath/fpgawrite 0x0 0x4077
+cmd: /pltf/txpath/fpgawrite 0x11 0x2D34 # Set DDR playback scale to 3dB gain
+cmd: /pltf/txpath/fpgawrite 0x0 0x4077 # Start playback

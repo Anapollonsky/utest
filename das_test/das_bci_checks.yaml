@@ -8,15 +8,15 @@ global:
 
 ## Version Checks
 cmd:
-  send: /oam/appversion
-  # expect: builddate
+  send: /pltf/flashdev/getActiveModInfo
+  print_response: 
 
 cmd:
-  send: /oam/hwversion
-  # expect: fpgaver
+  send: /pltf/txPath/fpgaRead 0xe 
 
-cmd:
-  send: /pltf/flashdev/getModVersionInfoShow
+
+# cmd:
+  # send: /pltf/flashdev/getModVersionInfoShow
 
   
 ## Basic Command Checks
