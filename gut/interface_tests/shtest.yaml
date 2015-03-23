@@ -43,6 +43,9 @@ cmd:
     store_as: year
   check_number:
     input1: year
-    input2: 2014
-    operation: "<="
+    input2:
+      input1: 2017
+      input2: 3
+      operation: "-"
+    operation: "="
   
