@@ -22,26 +22,17 @@ global:
   password: password
   expect: SUCCESS
 
-cmd: 
-  send: "/pltf/rxpath/fpgawrite 0x2a30 0xf"
-cmd: 
-  send: "/pltf/rxpath/fpgawrite 0x2a30 0xf"
-cmd: 
-  send: "/pltf/rxpath/fpgawrite 0x2a30 0xf"
-cmd: 
-  send: "/pltf/rxpath/fpgawrite 0x2a30 0xf"
-cmd: 
-  send: "/pltf/rxpath/fpgawrite 0xd 0x120 # rx2"
+cmd: "/pltf/rxpath/fpgawrite 0x2a30 0xf"
+cmd: "/pltf/rxpath/fpgawrite 0x2a30 0xf"
+cmd: "/pltf/rxpath/fpgawrite 0x2a30 0xf"
+cmd: "/pltf/rxpath/fpgawrite 0x2a30 0xf"
+cmd: "/pltf/rxpath/fpgawrite 0xd 0x120" # rx2
 # cmd: 
 #   send: "/pltf/rxpath/fpgawrite 0xd 0x020 # rx1  "
-cmd: 
-  send: "/pltf/rxpath/fpgawrite 0x12 0x3"
-cmd: 
-  send: "/pltf/rxpath/fpgawrite 0x0 0x8077"
-cmd: 
-  send: "/pltf/rxpath/fpgawrite 0x0 0x77"
-cmd: 
-  send: "/pltf/rxpath/fpgawrite 0x12 0x0"
+cmd: "/pltf/rxpath/fpgawrite 0x12 0x3"
+cmd: "/pltf/rxpath/fpgawrite 0x0 0x8077"
+cmd: "/pltf/rxpath/fpgawrite 0x0 0x77"
+cmd: "/pltf/rxpath/fpgawrite 0x12 0x0"
 
 global:
   interface: bci
