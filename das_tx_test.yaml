@@ -3,7 +3,7 @@ global:
   username: lucent
   password: password
   vars:
-    tx_freq: 300000
+    tx_freq: 750000 
     waveform: "LTE_5MHz_1Carrier.bin"    
 
 # Set synth

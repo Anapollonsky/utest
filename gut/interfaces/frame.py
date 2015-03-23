@@ -7,13 +7,13 @@ import utils as ut
 from decorators import command, hook
 
 class Frame(object):
-    """Representation of a sent/received frame. 
+    """Representation of a sent/received frame.
 
     Contains hooks, command functions, and 'paperwork'."""
 
     default_func_attrs = {"hooks": {}}
     global_permanent = {}
-    
+
     def __init__(self, local_settings, conman):
         """ Initialize a frame
 
@@ -22,34 +22,34 @@ class Frame(object):
         self._response = ""
         self.args = {}
         ut.recursive_dict_merge(local_settings, self.__class__.global_permanent)
-        
+
         def check_functions_exist(local_settings, functions, conman):
             """Verify that all the functions specified in local_settings can be found."""
             for func_string in local_settings:
                 if func_string not in [func.__name__ for func in functions]:
                     conman.ferror("Unexpected function specified: \"" + func_string + "\"")
-                    
+
         def handle_parametric_entry(local_settings, func, conman, argspec):
             """Handle parametric argument set."""
             args = argspec.args[1:]
             defaults = argspec.defaults or []
             covered_indices = [args.index(x) for x in local_settings[func.__name__]] # arg indices that are covered in passed arguments
-            remaining_args = [x for x in args if args.index(x) not in covered_indices] # leftover arguments to be filled 
+            remaining_args = [x for x in args if args.index(x) not in covered_indices] # leftover arguments to be filled
             remaining_defaults = [x for x in defaults if defaults.index(x) - (len(args) - len(defaults)) not in covered_indices] # leftover defaults
             if len(remaining_args) > len(remaining_defaults):
-                conman.terror("Not enough arguments for function \"" + func.__name__ + "\": Expected " + str(args) + "\"")            
-            else: 
+                conman.terror("Not enough arguments for function \"" + func.__name__ + "\": Expected " + str(args) + "\"")
+            else:
                 self.args[func.__name__] = local_settings[func.__name__]
 
         def handle_empty_entry(local_settings, func, conman, argspec):
             """Handle empty argument set."""
             args = argspec.args[1:]
-            defaults = argspec.defaults or [] 
+            defaults = argspec.defaults or []
             if len(args) > len(defaults):
                 conman.terror("Not enough arguments for function \"" + func.__name__ + "\": Expected " + str(args) + "\"")
             else:
                 self.args[func.__name__] = {}
-                
+
         def handle_single_entry(local_settings, func, conman, argspec):
             """Handle nonlabeled single argument set."""
             args = argspec.args[1:]
@@ -60,26 +60,26 @@ class Frame(object):
                 self.args[func.__name__] = {args[0]: local_settings[func.__name__]}
 
         # Construct a list of all available functions that have a priority attribute.
-        functions = [getattr(self, name) for name in dir(self) if (callable(getattr(self, name)) and hasattr(getattr(self, name), "priority"))]        
+        functions = [getattr(self, name) for name in dir(self) if (callable(getattr(self, name)) and hasattr(getattr(self, name), "priority"))]
         conman.message(3, "Sending " + local_settings["interface"] + " frame")
 
         check_functions_exist(local_settings, functions, conman)
 
         for func in functions:
             if func.__name__ in local_settings:
-                argspec = inspect.getargspec(func)                 
+                argspec = inspect.getargspec(func)
                 # If the passed argument is a dictionary that looks like it's assignment a data structure to each function argument
                 if isinstance(local_settings[func.__name__], dict) and all([x in inspect.getargspec(func).args for x in local_settings[func.__name__]]):
                     handle_parametric_entry(local_settings, func, conman, argspec)
                 # If the passed argument is empty
                 elif local_settings[func.__name__] == None:
-                    handle_empty_entry(local_settings, func, conman, argspec) 
+                    handle_empty_entry(local_settings, func, conman, argspec)
                 # If the passed argument is something else
                 else:
-                    handle_single_entry(local_settings, func, conman, argspec) 
+                    handle_single_entry(local_settings, func, conman, argspec)
         self.conman = conman
         self.conman.update_terminal() # Update the terminal on every frame sent. Not necessary, but performance isn't an issue right now.
-                
+
     def perform_actions(self):
         """ Execute all command functions of a frame.
 
@@ -104,7 +104,7 @@ class Frame(object):
 
             if func.quiet == False:
                 self.conman.message(2, "Running " + func.__name__)
-            
+
             for arg in func_args:
                 if isinstance(func.hooks, dict) and (arg in func.hooks):
                     for hook in func.hooks[arg]:
@@ -117,7 +117,7 @@ class Frame(object):
             if func.derived == False:
                 func(**func_args)
             else:
-                func(self, **func_args)                
+                func(self, **func_args)
 
     def deriveFunctionWithPriority(self, top_function, function, priority, name=None):
         """ Create a copy of an existing command function """
@@ -129,13 +129,13 @@ class Frame(object):
         # print("Derived: " + str(getattr(getattr(self, inspect.stack()[1][3]), "derived")))
         setattr(self, newfunction.__name__, newfunction)
         return newfunction
-                
+
     def insertFunction(self, function, args = {}):
         """ Insert a function in the appropriate place in the command queue """
         self.functions.append(getattr(self, function.__name__))
         self.functions.sort(key=lambda x: x.priority)
         self.args[function.__name__] = args
-        
+
 ################################################################################
 #################### Hooks
     @hook()
@@ -161,7 +161,7 @@ class Frame(object):
         if hasattr(self, "_show_args"):
             self.conman.message(1, "Argument: \"" + str(string) + "\"")
         return string
-        
+
 
 ################################################################################
 #################### Command Functions
@@ -179,7 +179,7 @@ class Frame(object):
     @command(1, quiet=True)
     def connect(self):
         """ Initiate the connection """
-        self._connection = self.conman.openconnection(self) 
+        self._connection = self.conman.openconnection(self)
 
     @command(0, [hook_show_args])
     def print_time(self, formatting="%H:%M:%S"):
@@ -209,21 +209,21 @@ class Frame(object):
     @command(101, [hook_show_args])
     def wait_after(self, wait_time):
         """ Wait after doing everything else """
-        time.sleep(wait_time) 
-        
+        time.sleep(wait_time)
+
 class Interactive_Frame(Frame):
     """ Extension of Frame class that implements functions useful for generic
     conversations with the target """
 
     # Implicitly run these command functions
-    global_permanent = {"capture": None, "connect": None} 
+    global_permanent = {"capture": None, "connect": None}
 ################################################################################
 #################### Hooks
 
-    
+
 ################################################################################
 #################### Command Functions
-    
+
     @command(4, [Frame.hook_var_replace, Frame.hook_show_args])
     def send(self, content):
         """ Send the frame. """
@@ -244,7 +244,7 @@ class Interactive_Frame(Frame):
     def print_send(self):
         """ Print what is being sent with 'send'. """
         self.conman.message(1, self._send)
-        
+
     @command(8, [Frame.hook_show_args])
     def reject(self, array, regex = False):
         """Throw an error if any string in list-argument is present in given frame's responses."""
@@ -252,13 +252,13 @@ class Interactive_Frame(Frame):
             if regex == True and any([re.search(k, self._response) for k in [str(x) for x in array]]):
                 self.conman.terror(["Captured rejected regex in response:" + k.strip(), self._response])
             elif regex == False and any([x in self._response for x in array]):
-                self.conman.terror(["Captured rejected substring in response:" + k.strip(), self._response])                
+                self.conman.terror(["Captured rejected substring in response:" + k.strip(), self._response])
         else:
             if regex == True and re.search(str(array), self._response):
                 self.conman.terror(["Captured rejected regex in response:" + array.strip(), self._response])
             elif regex == False and str(array) in self._response:
-                self.conman.terror(["Captured rejected substring in response:" + array.strip(), self._response])                
-                
+                self.conman.terror(["Captured rejected substring in response:" + array.strip(), self._response])
+
     @command(6, [Frame.hook_var_replace, Frame.hook_show_args])
     def expect(self, array, regex = False, timeout = 10):
         """Expect to capture strings
@@ -269,15 +269,15 @@ class Interactive_Frame(Frame):
         timer = int(timeout)
         if hasattr(self, "_response"):
             for k in diminishing_expect[:]:
-                if re.search(k, self._response): 
-                    diminishing_expect.remove(k)        
+                if re.search(k, self._response):
+                    diminishing_expect.remove(k)
         while diminishing_expect:
-            captured_lines_local = [] 
+            captured_lines_local = []
             iter_time = time.time()
             temp_expect = list(diminishing_expect)
             i = self.expect_message(temp_expect, timer)
             if i[1] == True:
-                self.conman.terror(["Timeout while waiting for the following substrings:\n" + str(diminishing_expect) + ".", self._response])        
+                self.conman.terror(["Timeout while waiting for the following substrings:\n" + str(diminishing_expect) + ".", self._response])
             timer -= (time.time() - iter_time) # Subtract time it took to capture
             self._response += i[0] # Captured Value
             for k in diminishing_expect[:]:
@@ -297,7 +297,7 @@ class Interactive_Frame(Frame):
         the regexes variable, that is used to specify the index under which the capture will be
         stored.
         """
-        
+
         # Store as the regex index, if not separately set
         if store_as == None and isinstance(regexes, list):
             store_as = list(regexes)
@@ -342,7 +342,7 @@ class Interactive_Frame(Frame):
         # Ensure that type is now the same
         if not ((isinstance(regexes, list) and isinstance(check_as, list)) or (isinstance(regexes, str) and isinstance(check_as, str))):
             self.conman.ferror("Unexpected regexes and check_as: " + str(regexes) + " | " + str(check_as))
-        
+
         def check_regex_single(self, regex, check):
             match = re.search(regex, self._response)
             if match:
@@ -353,7 +353,7 @@ class Interactive_Frame(Frame):
                 else:
                     self.conman.message(1, "Regex \"" + regex + "\" stored as \"" + check + "\" matches: \"" + str(match.groups()) + "\"")
             else:
-                self.conman.terror(["Expected regex " + regex + " not present in captured string.", self._response]) 
+                self.conman.terror(["Expected regex " + regex + " not present in captured string.", self._response])
         if isinstance(regexes, list):
             for regex, check in zip(regexes, check_as):
                 check_regex_single(self, regex, check)

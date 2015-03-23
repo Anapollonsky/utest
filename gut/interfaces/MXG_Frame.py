@@ -5,8 +5,8 @@ from interfaces.scpi_frame import scpi_Frame
 from decorators import command
 
 class MXG_Frame(scpi_Frame):
-    interfacename = "mxg"
-    
+    interfacename = "n5180mxg"
+
     def establish_connection(self, address):
         """ Connection procedure for remote shell."""
         try:
@@ -14,7 +14,7 @@ class MXG_Frame(scpi_Frame):
         except socket.timeout:
             return None
         time.sleep(.8)
-        con.read_very_eager() 
+        con.read_very_eager()
         return con
 
 ################################################################################
@@ -32,15 +32,21 @@ class MXG_Frame(scpi_Frame):
             state = state.upper()
         self._connection.read_very_eager()
         self.send_string("OUTPUT:STATE " + str(state))
-        time.sleep(.4)        
+        time.sleep(.4)
 
-    @command(3) 
+    @command(3)
     def set_freq(self, freq, unit="MHz"):
         """Permanently set output center frequency, in MHz by default"""
         self.send_string(":FREQ:MODE CW")
         time.sleep(.1)
         self._connection.read_very_eager()
         self.send_string(":FREQ:CW " + str(freq) + " " + str(unit))
+
+    @command(3)
+    def get_freq(self):
+        """Get output center frequency"""
+        self._connection.read_very_eager()
+        self.send_string(":FREQ:CW?")
 
     @command(3)
     def set_power(self, power, unit="W"):
@@ -52,6 +58,4 @@ class MXG_Frame(scpi_Frame):
     @command(3)
     def get_power(self):
         """ Get output power """
-        self._connection.read_very_eager()
         self.send_string(":POW:AMPL?")
-        time.sleep(.4)

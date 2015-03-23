@@ -1,10 +1,12 @@
-
+# Basic BCI checks, like version.
 include: das_bci_checks.yaml
-
-include: das_txrx_setup.yaml
-
-include: das_send_waveform.yaml
-
-# Use MXA to check power level
-
-# Same for TX1 and TX2
+# ARD  configuration for successful transmission.
+include: das_ard_config.yaml 
+# Run the TX Test
+include: das_tx_test.yaml
+# Verify at the receiver that the transmission was successful 
+include: das_verify_tx.yaml 
+# Run the RX Test
+include: das_rx_test.yaml 
+# Run the SRX Test
+include: das_srx_test.yaml 

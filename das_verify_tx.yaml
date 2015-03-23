@@ -2,18 +2,20 @@ global:
   interface: mxa
   address: 135.112.98.228
   vars:
-    tx_freq: 300000
+    tx_freq: 750000 
 
 cmd:
-  center_freq: 300000
+  address: 135.112.98.228
+  center_freq: tx_freq 
 
 
 cmd:
-  val_freq: 300000
+  address: 135.112.98.228
+  val_freq: tx_freq 
   print_response:
 
 cmd:
+  address: 135.112.98.228
   find_peaks:
   print_response:
-  # expect: 3.00
-    
+  expect: 7 
