@@ -13,6 +13,7 @@ class Frame(object):
 
     default_func_attrs = {"hooks": {}}
     global_permanent = {}
+    default_function = None
 
     def __init__(self, local_settings, conman):
         """ Initialize a frame
@@ -217,6 +218,7 @@ class Interactive_Frame(Frame):
 
     # Implicitly run these command functions
     global_permanent = {"capture": None, "connect": None}
+    default_function = "send"
 ################################################################################
 #################### Hooks
 

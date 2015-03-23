@@ -20,15 +20,15 @@ parser.add_argument("-r", "--repeat", help="set repetitions", default = 1, type=
 parser.add_argument("-l", "--log", help="set output log filename", default = None)
 parser.add_argument("--version", help="print out version and exit",
                     action='version', version='%(prog)s ' + str(VERSION))
-    
-    
+
+
 def parse_block(block, command_queue, conman):
     def parse_include(thefile, command_queue, conman):
         """Include the YAML commands defined in another file. Works recursively, commands added in-place."""
         try:
             infile = open(thefile, 'r')
         except IOError:
-            conman.ferror("Failed to open file " + thefile + ", exiting")            
+            conman.ferror("Failed to open file " + thefile + ", exiting")
         include_queue = pa.parse_yaml(infile, conman)
         command_queue[0].insert(0, (include_queue, thefile))
 
@@ -39,6 +39,18 @@ def parse_block(block, command_queue, conman):
 
     def parse_command(local_settings, conman):
         """Generate new local settings from global_temporary settings and new "cmd" block. Perform command actions."""
+        # Deal with compressed commands; ie "cmd: argnamehere"
+        if not isinstance(local_settings, dict):
+            if not hasattr(conman, "global_temporary") or "interface" not in conman.global_temporary:
+                conman.ferror("Cannot find global interface definition for compressed command with arguments \"" + str(local_settings) + "\"")
+            else:
+                interface = conman.get_interface(conman.global_temporary["interface"])
+                default_function = getattr(interface, "default_function")
+                if default_function == None:
+                    conman.ferror("No default function defined for interface \"" + interface.interfacename + "\"")
+                local_settings = {default_function: local_settings}
+
+        # Merge with global settings .
         if hasattr(conman, "global_temporary"):
             ut.recursive_dict_merge(local_settings, conman.global_temporary)
 
@@ -46,7 +58,7 @@ def parse_block(block, command_queue, conman):
         interface = conman.get_interface(local_settings["interface"])
         frame = interface(local_settings, conman)
         frame.perform_actions()
-    
+
     """Delegate actions based on top-level block type."""
     if "global" in block: # Global settings being set
         parse_global(block["global"], conman)
@@ -56,19 +68,19 @@ def parse_block(block, command_queue, conman):
         parse_command(block["cmd"], conman)
     else:
         conman.ferror("Unexpected top-level name \"" + list(block.keys())[0] + "\" encountered.")
- 
+
 def parse_command_queue (conman, queue):
     """Parse a "queue" (list,str) containing blocks to be executed and filename. Works recursively, on nested 'queues'."""
     conman.message(3, "Entering \"" + queue[1] + "\"")
     while queue[0]:
         block = queue[0][0]
-        del queue[0][0]        
+        del queue[0][0]
         if isinstance(block, tuple):
             parse_command_queue(conman, block)
         else:
             parse_block(block, queue, conman)
-    conman.message(3, "Leaving \"" + queue[1] + "\"")    
-    
+    conman.message(3, "Leaving \"" + queue[1] + "\"")
+
 if __name__ == "__main__":
     args = parser.parse_args() # Parse arguments
 
@@ -79,13 +91,12 @@ if __name__ == "__main__":
         conman.global_permanent["address"] = args.address
     if args.log:
         conman.global_permanent["log"] = args.log
-            
+
     iteration = 1
-    while(iteration <= args.repeat):        
+    while(iteration <= args.repeat):
         conman.message(4, "Beginning Iteration " + str(iteration) + " of " + str(args.repeat) + "...")
         parse_command_queue(conman, (deepcopy(command_queue_base), args.file))
         conman.message(4, "Iteration " + str(iteration) + " Completed")
         iteration += 1
 
     conman.closeallconnections()
-

@@ -58,20 +58,12 @@ global:
   username: lucent
   password: password
   expect: SUCCESS
-  
-cmd:
-  send: /pltf/txpath/fpgawrite 0x18 0x0
-cmd:
-  send: /pltf/txpath/fpgawrite 0x19 0x0f1f
-cmd:
-  send: /pltf/txpath/fpgawrite 0xc 0xF00
-cmd:
-  send: /pltf/txpath/fpgawrite 0x1f 0x0c24
-cmd:
-  send: /pltf/txpath/fpgawrite 0x1e 0xffff
-cmd:
-  send: /pltf/txpath/fpgawrite 0x10 0x2004
-cmd:
-  send: /pltf/txpath/fpgawrite 0x11 0x2D34
-cmd:
-  send: /pltf/txpath/fpgawrite 0x0 0x4077
+ 
+cmd: /pltf/txpath/fpgawrite 0x18 0x0
+cmd: /pltf/txpath/fpgawrite 0x19 0x0f1f
+cmd: /pltf/txpath/fpgawrite 0xc 0xF00
+cmd: /pltf/txpath/fpgawrite 0x1f 0x0c24
+cmd: /pltf/txpath/fpgawrite 0x1e 0xffff
+cmd: /pltf/txpath/fpgawrite 0x10 0x2004
+cmd: /pltf/txpath/fpgawrite 0x11 0x2D34
+cmd: /pltf/txpath/fpgawrite 0x0 0x4077
