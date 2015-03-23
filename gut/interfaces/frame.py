@@ -3,6 +3,7 @@ import time
 import types
 import re
 import inspect
+import operator
 import utils as ut
 from decorators import command, hook
 
@@ -362,6 +363,31 @@ class Interactive_Frame(Frame):
         else:
             check_regex_single(self, regexes, check_as)
 
+
+    @command(13, [Frame.hook_var_replace, Frame.hook_show_args])
+    def check_number(self, input1, input2, operation):
+        ops = {"=": operator.eq,
+               "!=": operator.ne,
+               "<": operator.lt,
+               ">": operator.gt,
+               ">=": operator.ge,
+               "<=": operator.le}
+        if isinstance(input1, str):
+            input1 = [float(x) for x in self.conman.storage[input1]]
+        else:
+            input1 = [float(input1)]
+        if isinstance(input2, str):
+            input2 = [float(x) for x in self.conman.storage[input2]]
+        else:
+            input2 = [float(input2)]
+        if operation not in ops:
+            self.conman.ferror("Invalid operator for check_number: \"" + operation + "\"")
+        for x in input1:
+            for y in input2:
+                if not ops[operation](x, y):
+                    self.conman.terror("check_number test failed: " + str(input1) + str(operation) + str(input2) + " is false.") 
+
+    
     @command(5, [Frame.hook_show_args])
     def wait_after_send(self, wait_time):
         time.sleep(wait_time)

@@ -35,4 +35,14 @@ cmd:
     regexes: '(bin).*\r\n.*(tmp)'
     check_as: 'random'    
   print_response:
-    
+
+cmd:
+  send: date
+  store_regex:
+    regexes: 'EDT (\d{4})'
+    store_as: year
+  check_number:
+    input1: year
+    input2: 2014
+    operation: "<="
+  
