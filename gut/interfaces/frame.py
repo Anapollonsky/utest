@@ -138,6 +138,18 @@ class Frame(object):
         self.functions.sort(key=lambda x: x.priority)
         self.args[function.__name__] = args
 
+    @staticmethod
+    def compute(input1, input2, operation):
+        ops = {"+": operator.add,
+               "-": operator.sub,
+               "*": operator.mul,
+               "/": operator.truediv}
+        if isinstance(input1, dict):
+            input1 = compute(**input1)
+        if isinstance(input2, dict):
+            input2 = compute(**input2)
+        return ops[operation](float(input1), float(input2))
+        
 ################################################################################
 #################### Hooks
     @hook()
@@ -374,10 +386,14 @@ class Interactive_Frame(Frame):
                "<=": operator.le}
         if isinstance(input1, str):
             input1 = [float(x) for x in self.conman.storage[input1]]
+        elif isinstance(input1, dict):
+            input1 = [Frame.compute(**input1)]
         else:
             input1 = [float(input1)]
         if isinstance(input2, str):
             input2 = [float(x) for x in self.conman.storage[input2]]
+        elif isinstance(input2, dict):
+            input2 = [Frame.compute(**input2)]
         else:
             input2 = [float(input2)]
         if operation not in ops:

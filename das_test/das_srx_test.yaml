@@ -19,27 +19,67 @@ global:
   vars:
     SRXFWD_LIM: -20
     SRXOFF_LIM: -45
+    SRX_FILE: random_filename
 
 
+cmd: "/pltf/txPath/setRfSwitches 0 0"
+
+cmd:
+  send: "/pltf/txPath/readSrxPower 0"
+  print_response:
+  store_regex:
+    regexes: "= (.*)[\r\n]"
+    store_as: "srx_power0"
+  check_number:
+    input1: "srx_power"
+    input2: "SRXFWD_LIM"
+    operation: ">="
+
+cmd: "/pltf/txPath/setRfSwitches 0 1"
+
+cmd:
+  send: "/pltf/txPath/readSrxPower 0"
+  print_response:
+  store_regex:
+    regexes: "= (.*)[\r\n]"
+    store_as: "srx_power1"
+  check_number:
+    input1: "srx_power1"
+    input2:
+      input1: "srx_power0"
+      input2: 7.0
+      operation: "-"
+    operation: "<"
+
+ 
+cmd: "/pltf/txPath/setRfSwitches 0 9"
+
+cmd:
+  send: "/pltf/txPath/readSrxPower 0"
+  print_response:
+  store_regex:
+    regexes: "= (.*)[\r\n]"
+    store_as: "srx_power2"
+  check_number:
+    input1: "srx_power2"
+    input2: "SRXOFF_LIM"
+    operation: "<"
+
+cmd: "/pltf/txPath/setRfSwitches 0 0"
 cmd: "/pltf/rxpath/fpgawrite 0x204 0x0"
 cmd: "/pltf/rxpath/fpgawrite 0xd 0x40"
 cmd: "/pltf/rxpath/fpgawrite 0x12 0x3"
 cmd: "/pltf/rxpath/fpgawrite 0x0 0xc077"
 cmd: "/pltf/rxpath/fpgawrite 0x12 0x0"
 
-global:
-  interface: bci
-  username: lucent
-  password: password
-
 cmd:
-  send: "/pltf/bsp/readfpgasram /tmp/srx_capture.bin 12288000 2 0x01800000"
+  send: "/pltf/bsp/readfpgasram /tmp/SRX_FILE 12288000 2 0x01800000"
   wait_after: 2
 
 cmd:
   interface: ftp
   username: lucent
   password: password
-  get: /tmp/srx_capture.bin
+  get: /tmp/SRX_FILE
 
 

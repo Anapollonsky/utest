@@ -54,10 +54,9 @@ class MXA_Frame(scpi_Frame):
 #################### Command functions
 
     @command(3, [Frame.hook_var_replace, Frame.hook_show_args])
-    def center_freq(self, freq, unit="MHz"):
+    def set_freq(self, freq, unit="MHz"):
         """ Permanently Set center frequency, in MHz by default """
-        self._connection.read_very_eager()
-        time.sleep(.2)
+        # self._connection.read_very_eager()
         self.send_string(":SENS:FREQ:CENT " + str(freq) + " " + str(unit))
 
 
@@ -74,6 +73,17 @@ class MXA_Frame(scpi_Frame):
     @command(4, [Frame.hook_var_replace, Frame.hook_show_args])
     def find_peaks(self, source = 1, threshold = 10, excursion = -200, sort = "FREQ"):
         """Provide list of Amplitude,Frequency pairs for given threshold and excursion"""
-        self._connection.read_very_eager()
-        time.sleep(.2)
+        # self._connection.read_very_eager()
         self.send_string(":CALC:DATA" + str(source) + ":PEAK? " + str(excursion) + "," + str(threshold) + "," + str(sort))
+
+    @command(3, [Frame.hook_var_replace, Frame.hook_show_args])
+    def set_mode(self, mode = "CHP"):
+        """Set the mode to something, like "CHP" for channel power."""
+        self.send_string(":INIT:" + mode)
+
+    @command(3, [Frame.hook_var_replace, Frame.hook_show_args])
+    def set_span(self, freq, unit="MHz")
+        # self._connection.read_very_eager()
+        self.send_string(":SENS:FREQ:SPAN" + str(freq) + " " + str(unit))
+
+   

@@ -3,11 +3,12 @@ global:
   username: lucent
   password: password
   vars:
-    rx_freq: 300000
+    RX_FREQ: 1970
+    RX_BW: 10
 # rx frequency
 
 cmd:
-  send: "/pltf/txPath/setLoFreq 2 rx_freq"
+  send: "/pltf/txPath/setLoFreq 2 RX_FREQ"
   expect: OK
 
 # set rx attenuation
@@ -27,8 +28,7 @@ cmd: "/pltf/rxpath/fpgawrite 0x2a30 0xf"
 cmd: "/pltf/rxpath/fpgawrite 0x2a30 0xf"
 cmd: "/pltf/rxpath/fpgawrite 0x2a30 0xf"
 cmd: "/pltf/rxpath/fpgawrite 0xd 0x120" # rx2
-# cmd: 
-#   send: "/pltf/rxpath/fpgawrite 0xd 0x020 # rx1  "
+# cmd: "/pltf/rxpath/fpgawrite 0xd 0x020 # rx1
 cmd: "/pltf/rxpath/fpgawrite 0x12 0x3"
 cmd: "/pltf/rxpath/fpgawrite 0x0 0x8077"
 cmd: "/pltf/rxpath/fpgawrite 0x0 0x77"
@@ -38,9 +38,11 @@ global:
   interface: bci
   username: lucent
   password: password
+  vars:
+    RX_FILE: rx_capture.bin
 
 cmd:
-  send: "/pltf/bsp/readfpgasram /tmp/tx_capture.bin 6144000 2 0x01800000"
+  send: "/pltf/bsp/readfpgasram /tmp/RX_FILE 6144000 2 0x01800000"
   print_response:
   wait_after: 2
 
@@ -48,7 +50,7 @@ cmd:
   interface: ftp
   username: lucent
   password: password
-  get: /tmp/tx_capture.bin
+  get: /tmp/RX_FILE
 
 
 
