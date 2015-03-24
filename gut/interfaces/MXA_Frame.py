@@ -91,7 +91,6 @@ class MXA_Frame(scpi_Frame):
         """Get the channel power, performing all intermediary legwork."""
         self.send_string(":INIT:CHP")
         self.send_string(":SENS:FREQ:CENT " + str(center) + " " + str(cunit))
-        self.send_string(":SENS:FREQ:SPAN" + str(bandwidth) + " " + str(bunit))
-        self.send_string(":READ:CHP?")
-    
+        self.send_string(":SENS:FREQ:SPAN " + str(bandwidth) + " " + str(bunit))
+        self.send_string(":SENS:CHP:BAND:INT " + str(bandwidth) + " " + str(bunit))
    
