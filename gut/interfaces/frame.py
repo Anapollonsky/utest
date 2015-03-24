@@ -384,18 +384,20 @@ class Interactive_Frame(Frame):
                ">": operator.gt,
                ">=": operator.ge,
                "<=": operator.le}
-        if isinstance(input1, str):
-            input1 = [float(x) for x in self.conman.storage[input1]]
-        elif isinstance(input1, dict):
+        if isinstance(input1, dict):
             input1 = [Frame.compute(**input1)]
         else:
-            input1 = [float(input1)]
-        if isinstance(input2, str):
-            input2 = [float(x) for x in self.conman.storage[input2]]
-        elif isinstance(input2, dict):
+            try:
+                input1 = [float(input1)]
+            except ValueError:
+                input1 = [float(x) for x in self.conman.storage[input1]]
+        if isinstance(input2, dict):
             input2 = [Frame.compute(**input2)]
         else:
-            input2 = [float(input2)]
+            try:
+                input2 = [float(input2)]
+            except ValueError:
+                input2 = [float(x) for x in self.conman.storage[input2]]
         if operation not in ops:
             self.conman.ferror("Invalid operator for check_number: \"" + operation + "\"")
         for x in input1:

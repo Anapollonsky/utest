@@ -69,3 +69,24 @@ cmd: /pltf/txpath/fpgawrite 0x1e 0xffff
 cmd: /pltf/txpath/fpgawrite 0x10 0x2004
 cmd: /pltf/txpath/fpgawrite 0x11 0x2D34 # Set DDR playback scale to 3dB gain
 cmd: /pltf/txpath/fpgawrite 0x0 0x4077 # Start playback
+
+
+global:
+  interface: mxa
+  address: 135.112.98.228
+  vars:
+    TX_FREQ: 1900 
+    TXTEST_BW: 5
+    TXPOW_LIM: 7 # dBm
+
+cmd:
+  get_channel_power:
+    center: TX_FREQ
+    bandwidth: TXTEST_BW
+  store_regex:
+    regexes: "something"
+    store_as: "channel_power"
+  check_number:
+    input1: channel_power
+    input2: TXPOW_LIM 
+    operation: "<"
