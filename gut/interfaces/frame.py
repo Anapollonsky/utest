@@ -138,17 +138,25 @@ class Frame(object):
         self.functions.sort(key=lambda x: x.priority)
         self.args[function.__name__] = args
 
-    @staticmethod
-    def compute(input1, input2, operation):
+    def compute(self, input1, input2, operation):
         ops = {"+": operator.add,
                "-": operator.sub,
                "*": operator.mul,
                "/": operator.truediv}
         if isinstance(input1, dict):
-            input1 = compute(**input1)
+            input1 = self.compute(**input1)
         if isinstance(input2, dict):
-            input2 = compute(**input2)
-        return ops[operation](float(input1), float(input2))
+            input2 = self.compute(**input2)
+        try:
+            input1 = float(input1)
+        except ValueError:
+            input1 = float(self.conman.storage[input1][0])
+        try:
+            input2 = float(input2)
+        except ValueError:
+            input2 = float(self.conman.storage[input2][0])
+
+        return ops[operation](input1, input2)
         
 ################################################################################
 #################### Hooks
@@ -385,14 +393,14 @@ class Interactive_Frame(Frame):
                ">=": operator.ge,
                "<=": operator.le}
         if isinstance(input1, dict):
-            input1 = [Frame.compute(**input1)]
+            input1 = [self.compute(**input1)]
         else:
             try:
                 input1 = [float(input1)]
             except ValueError:
                 input1 = [float(x) for x in self.conman.storage[input1]]
         if isinstance(input2, dict):
-            input2 = [Frame.compute(**input2)]
+            input2 = [self.compute(**input2)]
         else:
             try:
                 input2 = [float(input2)]

@@ -10,16 +10,14 @@ cmd:
   send: "/pltf/txPath/setAttn 8 SRX_ATTEN"
   wait_after: .4
 
-# do capture
 global:
   interface: bci
   username: lucent
   password: password
   expect: SUCCESS
   vars:
-    SRXFWD_LIM: -20
+    SRXFWD_LIM: -50
     SRXOFF_LIM: -45
-    SRX_FILE: random_filename
 
 
 cmd: "/pltf/txPath/setRfSwitches 0 0"
@@ -28,10 +26,10 @@ cmd:
   send: "/pltf/txPath/readSrxPower 0"
   print_response:
   store_regex:
-    regexes: "= (.*)[\r\n]"
+    regexes: '= (.*)[\r\n]'
     store_as: "srx_power0"
   check_number:
-    input1: "srx_power"
+    input1: "srx_power0"
     input2: "SRXFWD_LIM"
     operation: ">="
 
@@ -41,14 +39,14 @@ cmd:
   send: "/pltf/txPath/readSrxPower 0"
   print_response:
   store_regex:
-    regexes: "= (.*)[\r\n]"
+    regexes: '= (.*)[\r\n]'
     store_as: "srx_power1"
   check_number:
     input1: "srx_power1"
     input2:
       input1: "srx_power0"
-      input2: 7.0
-      operation: "-"
+      input2: "7"
+      operation: "/"
     operation: "<"
 
  
@@ -72,14 +70,25 @@ cmd: "/pltf/rxpath/fpgawrite 0x12 0x3"
 cmd: "/pltf/rxpath/fpgawrite 0x0 0xc077"
 cmd: "/pltf/rxpath/fpgawrite 0x12 0x0"
 
-cmd:
-  send: "/pltf/bsp/readfpgasram /tmp/SRX_FILE 12288000 2 0x01800000"
-  wait_after: 2
+global:
+  vars:
+    SRX_FILE: random_filename
 
 cmd:
+  interface: bci
+  username: lucent
+  password: password
+  send: "/pltf/bsp/readfpgasram /tmp/SRX_FILE 12288000 2 0x01800000"
+  wait_after: 5
+  print_response: 
+
+cmd:
+  address: 135.112.98.16
   interface: ftp
   username: lucent
   password: password
-  get: /tmp/SRX_FILE
+  rcwd: /tmp
+  lcwd: /home/aapollon/utest/das_test
+  get: SRX_FILE
 
 

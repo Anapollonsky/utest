@@ -1,12 +1,10 @@
 # Basic BCI checks, like version.
 include: das_bci_checks.yaml
 # ARD  configuration for successful transmission.
-include: das_ard_config.yaml 
+#include: das_ard_config.yaml 
 # Run the TX Test
 include: das_tx_test.yaml
-# Verify at the receiver that the transmission was successful 
-include: das_verify_tx.yaml 
 # Run the RX Test
-include: das_rx_test.yaml 
+# include: das_rx_test.yaml 
 # Run the SRX Test
 include: das_srx_test.yaml 

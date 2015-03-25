@@ -71,6 +71,6 @@ class ftp_Frame(Frame):
     def get(self, filename, binary = True):
         """Transfer a file from the server. Binary mode by default."""
         if binary:        
-            self._connection.retrbinary('RETR %s' % filename, open(filename, 'wb').write)
+            self._connection.retrbinary('RETR %s' % ntpath.basename(filename), open(filename, 'wb').write)
         else:
-            self._connection.retrlines("RETR %s" % filename, open(filename, 'w').write) 
+            self._connection.retrlines("RETR %s" % ntpath.basename(filename), open(filename, 'w').write) 

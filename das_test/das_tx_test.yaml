@@ -3,9 +3,9 @@ global:
   username: lucent
   password: password
   vars:
-    TX_FREQ: 1900 
-    VVA_ATTEN: 400
-    TXROC_ATTEN: 90
+    TX_FREQ: 751000 
+    VVA_ATTEN: 750 
+    TXROC_ATTEN: 500 # added extra zero
     TXTEST_WAVE: "lte5MHz_122p88_minus18dBFs.bin"    
     TXTEST_BW: 5
     
@@ -73,20 +73,45 @@ cmd: /pltf/txpath/fpgawrite 0x0 0x4077 # Start playback
 # Verification
 global:
   interface: mxa
-  address: 135.112.98.228
+  address: 135.112.98.43
   vars:
-    TX_FREQ: 1900 # MHz
-    TXTEST_BW: 5 # MHz
-    TXPOW_LIM: 7 # dBm
+    TX_FREQ: 751 # MHz
+    TXTEST_BW: 10 # MHz
+    TXPOW_LIM: 10 # dBm
 
 cmd:
+  address: 135.112.98.43
   get_channel_power:
     center: TX_FREQ
     bandwidth: TXTEST_BW
   store_regex:
-    regexes: "something"
+    regexes: '(-?\d.*),'
     store_as: "channel_power"
   check_number:
     input1: channel_power
     input2: TXPOW_LIM 
+    operation: ">"
+  print_response:
+  
+cmd:
+  address: 135.112.98.16
+  interface: bci
+  username: lucent
+  password: password
+  send: "/pltf/txPath/setAttn 1 990"
+  expect: OK
+
+cmd:
+  address: 135.112.98.43
+  get_channel_power:
+    center: TX_FREQ
+    bandwidth: TXTEST_BW
+  store_regex:
+    regexes: '(-?\d.*),'
+    store_as: "channel_power2"
+  check_number:
+    input1: channel_power2
+    input2: TXPOW_LIM 
     operation: "<"
+  print_response:
+ 

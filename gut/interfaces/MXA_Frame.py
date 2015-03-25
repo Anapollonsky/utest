@@ -82,7 +82,7 @@ class MXA_Frame(scpi_Frame):
         self.send_string(":INIT:" + mode)
 
     @command(3, [Frame.hook_var_replace, Frame.hook_show_args])
-    def set_span(self, freq, unit="MHz")
+    def set_span(self, freq, unit="MHz"):
         # self._connection.read_very_eager()
         self.send_string(":SENS:FREQ:SPAN" + str(freq) + " " + str(unit))
 
@@ -93,4 +93,7 @@ class MXA_Frame(scpi_Frame):
         self.send_string(":SENS:FREQ:CENT " + str(center) + " " + str(cunit))
         self.send_string(":SENS:FREQ:SPAN " + str(bandwidth) + " " + str(bunit))
         self.send_string(":SENS:CHP:BAND:INT " + str(bandwidth) + " " + str(bunit))
-   
+        self._connection.read_very_eager()
+        time.sleep(.2)
+        self.send_string(":READ:CHP?")
+        time.sleep(2)
