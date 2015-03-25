@@ -80,7 +80,7 @@ global:
     TXPOW_LIM: 10 # dBm
 
 cmd:
-  address: 135.112.98.43
+  # address: 135.112.98.43
   get_channel_power:
     center: TX_FREQ
     bandwidth: TXTEST_BW

@@ -34,8 +34,8 @@ def parse_block(block, command_queue, conman):
 
     def parse_global(settings, conman):
         """Generate new global_temporary settings from global_permanent settings and new "global" block"""
-        conman.global_temporary = deepcopy(conman.global_permanent)
-        ut.recursive_dict_merge(conman.global_temporary, settings)
+        conman.global_temporary = deepcopy(settings)
+        ut.recursive_dict_merge(conman.global_temporary, conman.global_permanent)
 
     def parse_command(local_settings, conman):
         """Generate new local settings from global_temporary settings and new "cmd" block. Perform command actions."""
@@ -50,10 +50,16 @@ def parse_block(block, command_queue, conman):
                     conman.ferror("No default function defined for interface \"" + interface.interfacename + "\"")
                 local_settings = {default_function: local_settings}
 
+    # def parse_connection(settings, conman):
+    #     """Define a set of connection parameters and group them under a connection name."""
+    #     if "interface" not in settings:
+    #         conman.ferror("Interface not defined in connection definition.")
+        
+
+        
         # Merge with global settings .
         if hasattr(conman, "global_temporary"):
             ut.recursive_dict_merge(local_settings, conman.global_temporary)
-
         # Construct appropriate frame based on interface
         interface = conman.get_interface(local_settings["interface"])
         frame = interface(local_settings, conman)
