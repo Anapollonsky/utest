@@ -97,3 +97,4 @@ class MXA_Frame(scpi_Frame):
         time.sleep(.2)
         self.send_string(":READ:CHP?")
         time.sleep(2)
+ 

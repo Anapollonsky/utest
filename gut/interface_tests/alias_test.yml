@@ -1,0 +1,8 @@
+connections:
+  - &shell
+    interface: shell
+
+
+cmd:
+  *shell
+  send: ls /
