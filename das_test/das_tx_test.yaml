@@ -15,11 +15,11 @@ do:
     # set tx attenuation (vva and roc)  
     # around 400 (vva)
   - <<: *bcio 
-    send: "/pltf/txPath/setAttn 4 VVA_ATTEN"
+    send: "/pltf/txPath/setAttn 4 $TXTEST_VVA_ATTEN"
 
     # around 80 (roc)
   - <<: *bcio  
-    send: "/pltf/txPath/setAttn 1 TXROC_ATTEN"
+    send: "/pltf/txPath/setAttn 1 $TXTEST_TXROC_ATTEN"
 
     # Load waveform and play
     # 

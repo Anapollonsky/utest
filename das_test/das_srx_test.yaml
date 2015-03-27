@@ -2,7 +2,6 @@
     send: "/pltf/txPath/setAttn 8 SRX_ATTEN"
     wait_after: .4
 
-
   - <<: *bcis
     send: "/pltf/txPath/setRfSwitches 0 0"
 
