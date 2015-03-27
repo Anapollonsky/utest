@@ -23,7 +23,16 @@ parser.add_argument("--version", help="print out version and exit",
 def parse_block(block, command_queue, conman):
     def parse_include(thefile, command_queue, conman):
         """Include the YAML commands defined in another file."""
-        include_queue = command_queue_from_file(conman, block["include"])
+        try:
+            infile = open(block["include"], 'r')
+        except IOError:
+            conman.ferror("Failed to open file " + block["include"] + ", exiting")
+        data =infile.read() if not hasattr(conman,"global_yaml") else conman.global_yaml + infile.read()
+        parsed_yaml = pa.parse_yaml(conman, data)
+        if "do" in parsed_yaml:
+            include_queue = deque(parsed_yaml["do"])
+        else:
+            include_queue = deque([])
         include_queue.reverse()
         command_queue.extendleft(include_queue)
 
@@ -34,6 +43,18 @@ def parse_block(block, command_queue, conman):
         frame = interface(local_settings, conman)
         frame.perform_actions()
 
+    def parse_message(settings, conman):
+        """Parse requests for messages to be printed. Overrides verbosity settings."""
+        level = 3
+        if "level" in settings:
+            if settings["level"] not in range(1, 5):
+                conman.ferror("Invalid message level, should be in [1-4]")
+            else:
+                level = settings["level"]
+        if "message" not in settings:
+            conman.ferror("No message specified")
+        conman.message(level, settings["message"])
+
     """Delegate actions based on top-level block type."""
     if "type" not in block:
         conman.ferror("Block with no specified type. Exiting.")
@@ -42,22 +63,11 @@ def parse_block(block, command_queue, conman):
     elif block["type"] == "command": # new frame being defined
         block.pop("type")
         parse_command(block, conman)
+    elif block["type"] == "message":
+        parse_message(block, conman)
     else:
         conman.ferror("Unexpected type \"" + block["type"] + "\" encountered.")
-
-def command_queue_from_file(conman, filename):
-    try:
-        infile = open(filename, 'r')
-    except IOError:
-        conman.ferror("Failed to open file " + filename + ", exiting")
-
-    file_contents = pa.parse_yaml(open(filename))
-
-    if "do" in file_contents:
-        return deque(file_contents["do"])
-    else:
-        return deque()
-        
+       
 def parse_command_queue (conman, queue):
     """Parse a "queue" (list,str) containing blocks to be executed and filename. Works recursively, on nested 'queues'."""
     while queue:
@@ -65,9 +75,23 @@ def parse_command_queue (conman, queue):
 
 if __name__ == "__main__":
     args = parser.parse_args() # Parse arguments
-
     conman = Conman(args.verbose) # Make conman
-    command_queue_base = command_queue_from_file(conman, args.file)
+    pa.init(conman, args.file) # Parser initialization 
+
+    # Root file i/o
+    try:
+        infile = open(args.file, 'r')
+    except IOError:
+        conman.ferror("Failed to open file " + filename + ", exiting")
+
+    members = pa.parse_yaml(conman, infile.read())
+    infile.close()
+    if "do" in members:
+           command_queue_base = deque(members["do"]) 
+    else:
+           conman.ferror("No \"do\" block found!")
+
+    # The actual work
     iteration = 1
     while(iteration <= args.repeat):
         conman.message(4, "Beginning Iteration " + str(iteration) + " of " + str(args.repeat) + "...")

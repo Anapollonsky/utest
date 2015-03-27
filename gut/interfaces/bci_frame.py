@@ -42,13 +42,14 @@ class BCI_Frame(Interactive_Frame):
 #################### Command functions
     @command(0, quiet=True)
     def username(self, username):
-        """Used to set the connection username, if any."""
+        """Used to set the connection username."""
         self._username = username        
 
     @command(0, quiet=True)
     def password(self, password):
-        """Used to set the connection password, if any."""
+        """Used to set the connection password."""
         self._password = password
+
     @command(0, quiet=True)
     def address(self, address):
         """Used to set the connection address."""
