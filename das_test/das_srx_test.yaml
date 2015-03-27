@@ -1,94 +1,76 @@
-# srx attenuation
-global:
-  interface: bci
-  username: lucent
-  password: password
-  vars:
-    SRX_ATTEN: 255
-       
-cmd:
-  send: "/pltf/txPath/setAttn 8 SRX_ATTEN"
-  wait_after: .4
-
-global:
-  interface: bci
-  username: lucent
-  password: password
-  expect: SUCCESS
-  vars:
-    SRXFWD_LIM: -50
-    SRXOFF_LIM: -45
+  - <<: *bci    
+    send: "/pltf/txPath/setAttn 8 SRX_ATTEN"
+    wait_after: .4
 
 
-cmd: "/pltf/txPath/setRfSwitches 0 0"
+  - <<: *bcis
+    send: "/pltf/txPath/setRfSwitches 0 0"
 
-cmd:
-  send: "/pltf/txPath/readSrxPower 0"
-  print_response:
-  store_regex:
-    regexes: '= (.*)[\r\n]'
-    store_as: "srx_power0"
-  check_number:
-    input1: "srx_power0"
-    input2: "SRXFWD_LIM"
-    operation: ">="
-
-cmd: "/pltf/txPath/setRfSwitches 0 1"
-
-cmd:
-  send: "/pltf/txPath/readSrxPower 0"
-  print_response:
-  store_regex:
-    regexes: '= (.*)[\r\n]'
-    store_as: "srx_power1"
-  check_number:
-    input1: "srx_power1"
-    input2:
+  - <<: *bcis
+    send: "/pltf/txPath/readSrxPower 0"
+    print_response:
+    store_regex:
+      regexes: '= (.*)[\r\n]'
+      store_as: "srx_power0"
+    check_number:
       input1: "srx_power0"
-      input2: "7"
-      operation: "/"
-    operation: "<"
+      input2: "SRXFWD_LIM"
+      operation: ">="
+
+  - <<: *bcis
+    send: "/pltf/txPath/setRfSwitches 0 1"
+
+  - <<: *bcis
+    send: "/pltf/txPath/readSrxPower 0"
+    print_response:
+    store_regex:
+      regexes: '= (.*)[\r\n]'
+      store_as: "srx_power1"
+    check_number:
+      input1: "srx_power1"
+      input2:
+        input1: "srx_power0"
+        input2: "7"
+        operation: "/"
+      operation: "<"
 
  
-cmd: "/pltf/txPath/setRfSwitches 0 9"
+  - <<: *bcis
+    send: "/pltf/txPath/setRfSwitches 0 9"
 
-cmd:
-  send: "/pltf/txPath/readSrxPower 0"
-  print_response:
-  store_regex:
-    regexes: "= (.*)[\r\n]"
-    store_as: "srx_power2"
-  check_number:
-    input1: "srx_power2"
-    input2: "SRXOFF_LIM"
-    operation: "<"
+  - <<: *bcis
+    send: "/pltf/txPath/readSrxPower 0"
+    print_response:
+    store_regex:
+      regexes: "= (.*)[\r\n]"
+      store_as: "srx_power2"
+    check_number:
+      input1: "srx_power2"
+      input2: "SRXOFF_LIM"
+      operation: "<"
 
-cmd: "/pltf/txPath/setRfSwitches 0 0"
-cmd: "/pltf/rxpath/fpgawrite 0x204 0x0"
-cmd: "/pltf/rxpath/fpgawrite 0xd 0x40"
-cmd: "/pltf/rxpath/fpgawrite 0x12 0x3"
-cmd: "/pltf/rxpath/fpgawrite 0x0 0xc077"
-cmd: "/pltf/rxpath/fpgawrite 0x12 0x0"
+  - <<: *bcis
+    send: "/pltf/txPath/setRfSwitches 0 0"
+  - <<: *bcis
+    send: "/pltf/rxpath/fpgawrite 0x204 0x0"
+  - <<: *bcis
+    send: "/pltf/rxpath/fpgawrite 0xd 0x40"
+  - <<: *bcis
+    send: "/pltf/rxpath/fpgawrite 0x12 0x3"
+  - <<: *bcis
+    send: "/pltf/rxpath/fpgawrite 0x0 0xc077"
+  - <<: *bcis
+    send: "/pltf/rxpath/fpgawrite 0x12 0x0"
 
-global:
-  vars:
-    SRX_FILE: random_filename
 
-cmd:
-  interface: bci
-  username: lucent
-  password: password
-  send: "/pltf/bsp/readfpgasram /tmp/SRX_FILE 12288000 2 0x01800000"
-  wait_after: 5
-  print_response: 
+  - <<: *bci
+    send: "/pltf/bsp/readfpgasram /tmp/SRX_FILE 12288000 2 0x01800000"
+    wait_after: 5
+    print_response: 
 
-cmd:
-  address: 135.112.98.16
-  interface: ftp
-  username: lucent
-  password: password
-  rcwd: /tmp
-  lcwd: /home/aapollon/utest/das_test
-  get: SRX_FILE
+  - <<: *bftp
+    rcwd: /tmp
+    lcwd: /home/aapollon/utest/das_test
+    get: SRX_FILE
 
 

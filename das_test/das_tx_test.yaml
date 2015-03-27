@@ -1,117 +1,88 @@
-global:
-  interface: bci
-  username: lucent
-  password: password
-  vars:
-    TX_FREQ: 751000 
-    VVA_ATTEN: 750 
-    TXROC_ATTEN: 500 # added extra zero
-    TXTEST_WAVE: "lte5MHz_122p88_minus18dBFs.bin"    
-    TXTEST_BW: 5
+do:   
+  - <<: *bcis
+    send: "/pltf/txPath/fpgawrite 0x206 0x5000"
+
+    # ensure lock
+  - <<: *bci
+    send: /pltf/txPath/pllStatus
+    expect:
+        - "ext synth 1 is locked"
+
+    # set tx lo
+  - <<: *bcio
+    send: "/pltf/txPath/setLoFreq 0 TX_FREQ_LARGE"
+
+    # set tx attenuation (vva and roc)  
+    # around 400 (vva)
+  - <<: *bcio 
+    send: "/pltf/txPath/setAttn 4 VVA_ATTEN"
+
+    # around 80 (roc)
+  - <<: *bcio  
+    send: "/pltf/txPath/setAttn 1 TXROC_ATTEN"
+
+    # Load waveform and play
+    # 
+    #   interface: ftp
+    #   address: 135.112.98.252
+    #   username: andrew
+    #   password: password
+    #   get: waveform
+
+  - <<: *bftp
+    rcwd: /tmp/
+    put: TXTEST_WAVE 
     
-# Set synth
-cmd: 
-  send: "/pltf/txPath/fpgawrite 0x206 0x5000"
-  expect: SUCCESS
+  - <<: *bci  
+    send: "/pltf/bsp/loadfpgasram TXTEST_WAVE 3 0x0"
+    expect: "filename"
 
-# ensure lock
-cmd:
-  send: /pltf/txPath/pllStatus
-  expect:
-    - "ext synth 1 is locked"
+  - <<: *bcis  
+    send: /pltf/txpath/fpgawrite 0x18 0x0
+  - <<: *bcis  
+    send: /pltf/txpath/fpgawrite 0x19 0x0f1f
+  - <<: *bcis  
+    send:  /pltf/txpath/fpgawrite 0xc 0xF00
+  - <<: *bcis  
+    send:  /pltf/txpath/fpgawrite 0x1f 0x0c24
+  - <<: *bcis  
+    send:  /pltf/txpath/fpgawrite 0x1e 0xffff
+  - <<: *bcis  
+    send:  /pltf/txpath/fpgawrite 0x10 0x2004
+  - <<: *bcis  
+    send:  /pltf/txpath/fpgawrite 0x11 0x2D34 # Set DDR playback scale to 3dB gain
+  - <<: *bcis  
+    send:  /pltf/txpath/fpgawrite 0x0 0x4077 # Start playback
 
-# set tx lo
-cmd:
-  send: "/pltf/txPath/setLoFreq 0 TX_FREQ"
-  expect: OK
+    # Verification
+    
+    # address: 135.112.98.43
+  - <<: *mxa
+    get_channel_power:
+      center: TX_FREQ_SMALL
+      bandwidth: TXTEST_BW
+    store_regex:
+      regexes: '(-?\d.*),'
+      store_as: "channel_power"
+    check_number:
+      input1: channel_power
+      input2: TXPOW_LIM 
+      operation: ">"
+    print_response:
 
-# set tx attenuation (vva and roc)  
-cmd:
-  # around 400 (vva)
-  send: "/pltf/txPath/setAttn 4 VVA_ATTEN"
-  expect: OK
+  - <<: *bcio
+    send: "/pltf/txPath/setAttn 1 990"
 
-cmd:
-  # around 80 (roc)
-  send: "/pltf/txPath/setAttn 1 TXROC_ATTEN"
-  expect: OK
+  - <<: *mxa
+    get_channel_power:
+      center: TX_FREQ_SMALL
+      bandwidth: TXTEST_BW
+    store_regex:
+      regexes: '(-?\d.*),'
+      store_as: "channel_power2"
+    check_number:
+      input1: channel_power2
+      input2: TXPOW_LIM 
+      operation: "<"
+    print_response:
 
-# Load waveform and play
-# cmd:
-#   interface: ftp
-#   address: 135.112.98.252
-#   username: andrew
-#   password: password
-#   get: waveform
-
-cmd:
-  interface: ftp
-  username: lucent
-  password: password
-  rcwd: /tmp/
-  put: TXTEST_WAVE 
-
-cmd:
-  send: "/pltf/bsp/loadfpgasram TXTEST_WAVE 3 0x0"
-  expect: "filename"
-  
-global:
-  interface: bci
-  username: lucent
-  password: password
-  expect: SUCCESS
- 
-cmd: /pltf/txpath/fpgawrite 0x18 0x0
-cmd: /pltf/txpath/fpgawrite 0x19 0x0f1f
-cmd: /pltf/txpath/fpgawrite 0xc 0xF00
-cmd: /pltf/txpath/fpgawrite 0x1f 0x0c24
-cmd: /pltf/txpath/fpgawrite 0x1e 0xffff
-cmd: /pltf/txpath/fpgawrite 0x10 0x2004
-cmd: /pltf/txpath/fpgawrite 0x11 0x2D34 # Set DDR playback scale to 3dB gain
-cmd: /pltf/txpath/fpgawrite 0x0 0x4077 # Start playback
-
-# Verification
-global:
-  interface: mxa
-  address: 135.112.98.43
-  vars:
-    TX_FREQ: 751 # MHz
-    TXTEST_BW: 10 # MHz
-    TXPOW_LIM: 10 # dBm
-
-cmd:
-  # address: 135.112.98.43
-  get_channel_power:
-    center: TX_FREQ
-    bandwidth: TXTEST_BW
-  store_regex:
-    regexes: '(-?\d.*),'
-    store_as: "channel_power"
-  check_number:
-    input1: channel_power
-    input2: TXPOW_LIM 
-    operation: ">"
-  print_response:
-  
-cmd:
-  address: 135.112.98.16
-  interface: bci
-  username: lucent
-  password: password
-  send: "/pltf/txPath/setAttn 1 990"
-  expect: OK
-
-cmd:
-  address: 135.112.98.43
-  get_channel_power:
-    center: TX_FREQ
-    bandwidth: TXTEST_BW
-  store_regex:
-    regexes: '(-?\d.*),'
-    store_as: "channel_power2"
-  check_number:
-    input1: channel_power2
-    input2: TXPOW_LIM 
-    operation: "<"
-  print_response:
- 

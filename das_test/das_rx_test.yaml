@@ -1,56 +1,38 @@
-global:
-  interface: bci
-  username: lucent
-  password: password
-  vars:
-    RX_FREQ: 1970
-    RX_BW: 10
-# rx frequency
+do:
+  - <<: *bcio
+    send: "/pltf/txPath/setLoFreq 2 RX_FREQ_LARGE"
 
-cmd:
-  send: "/pltf/txPath/setLoFreq 2 RX_FREQ"
-  expect: OK
+  - <<: *bcio
+    send: "/pltf/txPath/SetAttn 10 255"
 
-# set rx attenuation
-cmd:
-  send: "/pltf/txPath/SetAttn 10 255"
-  expect: OK
+  - <<: *bcis
+    send: "/pltf/rxpath/fpgawrite 0x2a30 0xf"   
+  - <<: *bcis
+    send: "/pltf/rxpath/fpgawrite 0x2a30 0xf"
+  - <<: *bcis
+    send: "/pltf/rxpath/fpgawrite 0x2a30 0xf"
+  - <<: *bcis
+    send: "/pltf/rxpath/fpgawrite 0x2a30 0xf"
+  - <<: *bcis
+    send: "/pltf/rxpath/fpgawrite 0xd 0x120" # rx2
+  # - <<: *bcis
+  # send: "/pltf/rxpath/fpgawrite 0xd 0x020 # rx1
+  - <<: *bcis
+    send: "/pltf/rxpath/fpgawrite 0x12 0x3"
+  - <<: *bcis
+    send: "/pltf/rxpath/fpgawrite 0x0 0x8077"
+  - <<: *bcis
+    send: "/pltf/rxpath/fpgawrite 0x0 0x77"
+  - <<: *bcis
+    send: "/pltf/rxpath/fpgawrite 0x12 0x0"
 
+  - <<: *bci
+    send: "/pltf/bsp/readfpgasram /tmp/RX_FILE 6144000 2 0x01800000"
+    print_response:
+    wait_after: 2
 
-global:
-  interface: bci
-  username: lucent
-  password: password
-  expect: SUCCESS
-
-cmd: "/pltf/rxpath/fpgawrite 0x2a30 0xf"
-cmd: "/pltf/rxpath/fpgawrite 0x2a30 0xf"
-cmd: "/pltf/rxpath/fpgawrite 0x2a30 0xf"
-cmd: "/pltf/rxpath/fpgawrite 0x2a30 0xf"
-cmd: "/pltf/rxpath/fpgawrite 0xd 0x120" # rx2
-# cmd: "/pltf/rxpath/fpgawrite 0xd 0x020 # rx1
-cmd: "/pltf/rxpath/fpgawrite 0x12 0x3"
-cmd: "/pltf/rxpath/fpgawrite 0x0 0x8077"
-cmd: "/pltf/rxpath/fpgawrite 0x0 0x77"
-cmd: "/pltf/rxpath/fpgawrite 0x12 0x0"
-
-global:
-  interface: bci
-  username: lucent
-  password: password
-  vars:
-    RX_FILE: rx_capture.bin
-
-cmd:
-  send: "/pltf/bsp/readfpgasram /tmp/RX_FILE 6144000 2 0x01800000"
-  print_response:
-  wait_after: 2
-
-cmd:
-  interface: ftp
-  username: lucent
-  password: password
-  get: /tmp/RX_FILE
+  - <<: *bftp
+    get: /tmp/RX_FILE
 
 
 
