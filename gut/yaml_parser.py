@@ -2,11 +2,11 @@ import yaml
 import re
 import utils as ut
 
-def parse_yaml(stream, conman):
-    """ Parse YAML stream sequentially
+## Due to the desire to access aliases globally, includes are parsed separately.
 
-    Parse a YAML stream in such a way that the upper-most dictionary is instead saved
-    as a list, for sequential access."""
-    yamlsplit = re.split("\n(?!\s)", stream.read().strip()) # Split into sequential dictionaries
-    yamlparse = [yaml.load(x) for x in yamlsplit if x[0] != '#'] # Parse dictionaries
-    return yamlparse
+
+
+
+def parse_yaml(stream):
+    return yaml.load(stream.read())
+
