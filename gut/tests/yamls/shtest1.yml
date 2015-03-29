@@ -1,0 +1,16 @@
+global:
+  - &shell
+    type: command
+    interface: shell
+
+do:
+  - <<: *shell
+    send: ls /
+    print_response:
+
+  - <<: *shell
+    send: pwd
+    print_response:
+
+  - type: include
+    include: shtest2.yml

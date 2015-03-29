@@ -1,0 +1,5 @@
+
+do:
+  - <<: *shell
+    send: "echo 'test'"
+    print_response:
