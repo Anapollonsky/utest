@@ -1,51 +1,54 @@
 global:
-  interface: shell
-  shell: sh
-  print_response:
-  send: pwd
-  
-cmd:
-  store_regex:
-    regexes: '/(\w+)\r\n'
-    store_as: 'current_folder'
+  - &shell
+    shell: sh
+    type: command
+    interface: shell 
+    
+do:
+  - <<: *shell 
+    print_response:
+    send: pwd
+    store_regex:
+      regexes: '/(\w+)\r\n'
+      store_as: 'current_folder'
 
-cmd:
-  check_regex:
-    regexes: '/(\w+)\r\n'
-    check_as: 'current_folder'
+  - <<: *shell 
+    print_response:
+    send: pwd
+    check_regex:
+      regexes: '/(\w+)\r\n'
+      check_as: 'current_folder'
 
 
-  
-cmd:
-  send: ls /
-  expect:
-    - bin
-    - usr
-  store_regex:
-    regexes: '(bin).*\r\n.*(tmp)'
-    store_as: 'random'
-  print_response:
+  - <<: *shell
+    send: ls /
+    expect:
+      - bin
+      - usr
+    store_regex:
+      regexes: '(bin).*\r\n.*(tmp)'
+      store_as: 'random'
+    print_response:
 
-cmd:
-  send: ls /
-  expect:
-    - bin
-    - usr
-  check_regex:
-    regexes: '(bin).*\r\n.*(tmp)'
-    check_as: 'random'    
-  print_response:
+  - <<: *shell 
+    send: ls /
+    expect:
+      - bin
+      - usr
+    check_regex:
+      regexes: '(bin).*\r\n.*(tmp)'
+      check_as: 'random'    
+    print_response:
 
-cmd:
-  send: date
-  store_regex:
-    regexes: 'EDT (\d{4})'
-    store_as: year
-  check_number:
-    input1: year
-    input2:
-      input1: 2017
-      input2: 3
-      operation: "-"
-    operation: "="
-  
+  - <<: *shell
+    send: date
+    store_regex:
+      regexes: '(\d{4})'
+      store_as: year
+    check_number:
+      input1: year
+      input2:
+        input1: 2017
+        input2: 2
+        operation: "-"
+      operation: "="

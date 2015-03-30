@@ -9,11 +9,11 @@ class TestYamlParse:
     def setup(self):
         self.conman = Conman(3)
 
-    def test_yaml_1(self):
+    def test_yaml_dos_1(self):
         filename = 'yamls/shtest1.yml'
         pa.init(self.conman, filename)
-        dos = pa.parse_yaml(self.conman, open(filename).read())["do"]
-        print(dos)
+        yamls = pa.parse_yaml(self.conman, open(filename).read())
+        dos = yamls["do"]
         assert dos == [{"type": "command",
                         "interface": "shell",
                         "send": "ls /",
@@ -25,3 +25,10 @@ class TestYamlParse:
                        {"type": "include",
                         "include": "shtest2.yml"}] 
         
+
+    def test_yaml_globals_1(self):
+        filename = 'yamls/shtest1.yml'
+        pa.init(self.conman, filename)
+        yamls = pa.parse_yaml(self.conman, open(filename).read())
+        globs = yamls["global"]
+        assert globs == [{"type": "command", "interface": "shell"}]

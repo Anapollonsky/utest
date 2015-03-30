@@ -23,16 +23,7 @@ parser.add_argument("--version", help="print out version and exit",
 def parse_block(block, command_queue, conman):
     def parse_include(thefile, command_queue, conman):
         """Include the YAML commands defined in another file."""
-        try:
-            infile = open(block["include"], 'r')
-        except IOError:
-            conman.ferror("Failed to open file " + block["include"] + ", exiting")
-        data =infile.read() if not hasattr(conman,"global_yaml") else conman.global_yaml + infile.read()
-        parsed_yaml = pa.parse_yaml(conman, data)
-        if "do" in parsed_yaml:
-            include_queue = deque(parsed_yaml["do"])
-        else:
-            include_queue = deque([])
+        include_queue = get_command_queue(conman, block["include"])
         include_queue.reverse()
         command_queue.extendleft(include_queue)
 
@@ -73,23 +64,30 @@ def parse_command_queue (conman, queue):
     while queue:
         parse_block(queue.popleft(), queue, conman)
 
+def get_command_queue(conman, filename, root = False):
+    """ Extract command queue from file, with slight behavior modification depending on whether root file."""
+    try:
+        infile = open(filename, 'r')
+    except IOError:
+        conman.ferror("Failed to open file " + filename + ", exiting")
+    if (not hasattr(conman, "global_yaml")) or root == True:
+        data = infile.read()
+    else:
+        data = conman.global_yaml + infile.read()
+    infile.close()
+    
+    members = pa.parse_yaml(conman, data)
+    if "do" in members:
+           command_queue = deque(members["do"]) 
+    else:
+           conman.ferror("No \"do\" block found!")
+    return command_queue
+
 if __name__ == "__main__":
     args = parser.parse_args() # Parse arguments
     conman = Conman(args.verbose) # Make conman
     pa.init(conman, args.file) # Parser initialization 
-
-    # Root file i/o
-    try:
-        infile = open(args.file, 'r')
-    except IOError:
-        conman.ferror("Failed to open file " + filename + ", exiting")
-
-    members = pa.parse_yaml(conman, infile.read())
-    infile.close()
-    if "do" in members:
-           command_queue_base = deque(members["do"]) 
-    else:
-           conman.ferror("No \"do\" block found!")
+    command_queue_base = get_command_queue(conman, args.file, root = True) 
 
     # The actual work
     iteration = 1
