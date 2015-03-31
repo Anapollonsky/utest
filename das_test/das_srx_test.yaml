@@ -1,5 +1,6 @@
+do:
   - <<: *bci    
-    send: "/pltf/txPath/setAttn 8 SRX_ATTEN"
+    send: "/pltf/txPath/setAttn 8 VAR_SRX_TEST_ATTEN"
     wait_after: .4
 
   - <<: *bcis
@@ -13,7 +14,7 @@
       store_as: "srx_power0"
     check_number:
       input1: "srx_power0"
-      input2: "SRXFWD_LIM"
+      input2: "VAR_SRX_TEST_FWD_LIM"
       operation: ">="
 
   - <<: *bcis
@@ -32,7 +33,6 @@
         input2: "7"
         operation: "/"
       operation: "<"
-
  
   - <<: *bcis
     send: "/pltf/txPath/setRfSwitches 0 9"
@@ -45,7 +45,7 @@
       store_as: "srx_power2"
     check_number:
       input1: "srx_power2"
-      input2: "SRXOFF_LIM"
+      input2: "VAR_SRX_TEST_OFF_LIM"
       operation: "<"
 
   - <<: *bcis
@@ -63,13 +63,17 @@
 
 
   - <<: *bci
-    send: "/pltf/bsp/readfpgasram /tmp/SRX_FILE 12288000 2 0x01800000"
+    send: "/pltf/bsp/readfpgasram /tmp/VAR_SRX_TEST_FILE 12288000 2 0x01800000"
     wait_after: 5
-    print_response: 
 
   - <<: *bftp
     rcwd: /tmp
     lcwd: /home/aapollon/utest/das_test
-    get: SRX_FILE
+    get: VAR_SRX_TEST_FILE
+
+  - <<: *shell
+    send: ./das_capture_power.m VAR_SRX_TEST_FILE 307.2 0 10 
+    expect: "Power in region"
+    print_response:
 
 

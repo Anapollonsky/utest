@@ -4,21 +4,21 @@
 global: # The global block is captured and prepended to every included file.
   - &vars
     vars:
-      TX_FREQ_SMALL: 751
-      TX_FREQ_LARGE: 751000
-      $TXTEST_VVA_ATTEN: 75
-      $TXTEST_TXROC_ATTEN: 300
-      TXTEST_WAVE: "lte5MHz_122p88_minus18dBFs.bin"
-      TXTEST_BW: 10 # MHz
-      TXPOW_LIM: 10 # dBm
-      SRX_ATTEN: 255
-      SRXFWD_LIM: -50
-      SRXOFF_LIM: -45
-      SRX_FILE: "random_filename"
-      RX_FREQ_SMALL: 800
-      RX_FREQ_LARGE: 800000
-      RX_BW: 10
-      RX_FILE: "rx_capture.bin"
+      VAR_TX_TEST_FREQ_SMALL: 751
+      VAR_TX_TEST_FREQ_LARGE: 751000
+      VAR_TX_TEST_VVA_ATTEN: 75
+      VAR_TX_TEST_TXROC_ATTEN: 300
+      VAR_TX_TEST_WAVE: "LTE_5MHz_1Carrier.bin"
+      VAR_TX_TEST_BW: 10 # MHz
+      VAR_TX_TEST_POW_LIM: 10 # dBm
+      VAR_SRX_ATTEN: 255
+      VAR_SRX_TEST_FWD_LIM: -50
+      VAR_SRX_TEST_OFF_LIM: -45
+      VAR_SRX_TEST_FILE: "random_filename"
+      VAR_RX_TEST_FREQ_SMALL: 800
+      VAR_RX_TEST_FREQ_LARGE: 800000
+      VAR_RX_TEST_BW: 10
+      VAR_RX_TEST_FILE: "rx_capture.bin"
 
   - &mxa
     type: command
@@ -28,8 +28,9 @@ global: # The global block is captured and prepended to every included file.
 
   - &mxg
     type: command
-    interface: mxg
-    address: unknown
+    interface: n5180mxg
+    address: 135.112.98.225 
+    <<: *vars
 
   - &bci
     type: command
@@ -55,6 +56,11 @@ global: # The global block is captured and prepended to every included file.
     address: 135.112.98.16
     <<: *vars
 
+  - &shell
+    type: command
+    interface: shell
+    <<: *vars
+
 do:
   - type: message
     message: "Beginning BCI Checks..."
@@ -75,7 +81,7 @@ do:
     level: 4
     
   - type: include
-    include: das_tx_test.yaml
+    include: das_srx_test.yaml
 
   - type: message
     message: "Beginning RX Test..."

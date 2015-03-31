@@ -22,50 +22,23 @@ This section will give a brief introduction to writing proper YAML files for GUT
 *** Overview
 YAML is used as the language of choice for GUT. It was chosen over XML due to the relative conciseness of the syntax, over JSON due to the support of multi-line strings, and over a custom solution due to the desire to use a standardized format. Below is a very simple example of a test.
 #+BEGIN_SRC yaml
-global:
-  username: lucent
-  password: notpassword
-  interface: telnet
-  log: logs/test2log
-  print_response:
-
-cmd:
-  send: pwd
-  wait_after_send: .5
+do:
+  - type: command
+    username: lucent
+    password: notpassword
+    interface: telnet
+    address: 127.0.0.1
+    log: logs/test2log
+    print_response:
+    send: pwd
+    wait_after_send: .5
 #+END_SRC
 
-Note that YAML is, like python itself, reliant on whitespace to designate structure. There are two blocks in the above snippet: a =global= block, and a =cmd= block. Top-level blocks such as these are parsed sequentially -- the =cmd= block is parsed only after GUT is finished with =global=. There are only three types of top-level blocks supported: =global=, =cmd= and =include=. An =include= block is used to include YAML code from another file into the current test. The =global= block specifies global settings that will be merged with every subsequent =cmd= block, until another =global= block overwrites the global settings. As such, the snippet above is equivalent to the following:
+Note that YAML is, like python itself, reliant on whitespace to designate structure. There is a single =do= block, containing a single command. The =do= block designates a list of actions to be done in sequential order. In this example, the only action is a single command, that connects with telnet using the username 'lucent' and the password 'notpassword' to the address '127.0.0.1', sends the command 'pwd', logs the input and output to 'logs/test2log', prints the output to the command line, and waits for half a second. In that order. 
 
-#+BEGIN_SRC yaml
-cmd:
-  username: lucent
-  password: notpassword
-  interface: telnet
-  send: pwd
-  wait_after_send: .5
-  log: logs/test2log
-  print_response:
-#+END_SRC
+Entries in =do= blocks with a type of 'command' are generally responsible for sending data down an interface and performing some analysis on the output. To enable flexible tests, GUT interprets everything in a 'command' type entry as a function. In the above block, for example, 'username' is a function with a single argument, which the test passes as 'lucent'. The order in which these functions appear in a block has no effect on how the block is executed; instead, these functions are run in an order determined by the /priority/ of the function. The priority of a function is a hardcoded numerical value assigned to each function; the higher the priority, the lower the priority-number, the earlier the function will be run in each block.
 
-The =cmd= block is responsible for sending data over an interface and performing analysis on the results. Each =cmd= block is a dictionary that maps "command functions" to their arguments. In the example above, =username= is a function with the argument "lucent", =wait_after_send= is a function with the argument 0.5, and =print_response= is a function with no argument. The order in which these functions appear in a block has no effect on how the block is executed; instead, these functions are run in an order determined by the /priority/ of the function. The priority of a function is a hardcoded numerical value assigned to each function; the higher the priority, the lower the priority-number, the earlier the function will be run in each block. 
-
-In addition to the commands above, there are some commands functions which are dynamically included due to the command-line arguments. For example, in the block above, you see that there is no specification of the address of the target. This is because the GUT command-line argument =--address= was used to set the address. This value is used as the default, but it can be overwritten by manually inserting an =address: localhost= entry or similar in a block. Similarly, certain interfaces implicitly include their own commands into each command. For a telnet frame, there are two commands which are always inserted and hidden: =connect= and =capture=. The =connect= command function has a priority such that it is run after all connection parameters, such as "interface", "username" and "password", have been set. It opens a connection to the desired target, or returns an existing one if a previous command had already opened one. The =capture= command, on the other hand, is used to capture any responses from the target.
-
-With these modifications (and if the command was run with =--address localhost=), the block above is also thus equivalent to:
-
-#+BEGIN_SRC yaml
-cmd:
-  username: lucent
-  password: notpassword
-  interface: telnet
-  send: pwd
-  wait_after_send: .5
-  log: logs/test2log
-  print_response:
-  connect:
-  capture:
-  address: localhost
-#+END_SRC
+ Certain interfaces implicitly include their own commands into each command. For a telnet frame, there are two commands which are always inserted and hidden: =connect= and =capture=. The =connect= command function has a priority such that it is run after all connection parameters, such as "interface", "username" and "password", have been set. It opens a connection to the desired target, or returns an existing one if a previous command had already opened one. The =capture= command, on the other hand, is used to capture any responses from the target.
 
 Here's what GUT does, given the block above:
 + Set the frame attribute =username= to "lucent"
@@ -81,57 +54,18 @@ Here's what GUT does, given the block above:
 
 This is all well and good, but what if we want to run functions that require a more complicated input than a string or a number? What about multiple arguments to functions? How can this be handled? The GUT parser handles multiple arguments by accepting a /dictionary/ (or /map/) of arguments. Here's an example:
 #+BEGIN_SRC yaml
-cmd:
   expect:
     array: [teststring, (?)error]
     regex: True
 #+END_SRC
 =expect= above is a function that accepts two arguments, =array= and =regex=, that match the parameters in the function definition. The expect definition also defines a default value for the =regex= argument, making it optional. This also leads into a demonstration of how the more compact argument passing shown previously works: In the event that a single argument is sufficient to run the command function, that argument can be passed directly to the function name. Thus, if we were willing to sacrifice regex support, the command could be rewritten as:
 #+BEGIN_SRC yaml
-cmd:
   expect: [teststring, (?)error]
 #+END_SRC
 This "optimization" makes it easier to write concise tests.
 
 *** Complicated Example
 Below is an example of a more complicated test, showing the flexibility of GUT.
-#+BEGIN_SRC yaml
-global:
-  interface: bci
-  username: lucent
-  password: password
-  reject: "error"
-  send: /oam/hwVersion
-
-cmd:
-  address: 135.112.98.16
-  store_regex:
-    - "FPGA Version: (.*), CPLD Version: (.{3})"
-    - "HwVersion: (.*) HwRef" 
-
-cmd:
-  address: 135.112.98.30
-  check_regex:
-    - "FPGA Version: (.*), CPLD Version: (.{3})"
-    - "HwVersion: (.*) HwRef"  
-
-global:
-  interface: shell
-  shell: sh
-  print_response:
-  send: pwd
-  
-cmd:
-  store_regex:
-    regexes: '/(\w+)\r\n'
-    store_as: 'current_folder'
-
-cmd:
-  check_regex:
-    regexes: '/(\w+)\r\n'
-    check_as: 'current_folder'
-
-#+END_SRC
 What is this test doing? The first =global= block specifies several options to be used for the subsequent BCI commands: =interface=, =username= and =password=. It also specifies a =send= function, which means that for every subsequent =cmd= block, the message being sent will stay the same. Lastly, due to the =reject= command function, if, in the subsequent messages, the substring "error" occurs in the responses, GUT will throw an error.
 
 Next are two =cmd= blocks. They both specify different board addresses, and one specifies =store_regex=, and the other specifies =check_regex=. The =store_regex= scans the response from the target for an expression matching the regex, and stores multiple values which match the sections within parentheses. The =check_regex= function performs the same match, except that instead of storing it, it compares with existing stored values. Thus, this test checks whether the captured FPGA version, CPLD Version and HwVersion are identical for both targets, without requiring knowing in advance of what those versions are. In order to use these commands (and, indeed, understand the terminology), it is strongly recommended that the user be familiar with regular expressions. 

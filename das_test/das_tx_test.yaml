@@ -10,16 +10,16 @@ do:
 
     # set tx lo
   - <<: *bcio
-    send: "/pltf/txPath/setLoFreq 0 TX_FREQ_LARGE"
-
+    send: "/pltf/txPath/setLoFreq 0 VAR_TX_TEST_FREQ_LARGE"
+      
     # set tx attenuation (vva and roc)  
     # around 400 (vva)
   - <<: *bcio 
-    send: "/pltf/txPath/setAttn 4 $TXTEST_VVA_ATTEN"
+    send: "/pltf/txPath/setAttn 4 VAR_TX_TEST_TXROC_ATTEN"
 
     # around 80 (roc)
   - <<: *bcio  
-    send: "/pltf/txPath/setAttn 1 $TXTEST_TXROC_ATTEN"
+    send: "/pltf/txPath/setAttn 1 VAR_TX_TEST_TXROC_ATTEN"
 
     # Load waveform and play
     # 
@@ -31,10 +31,10 @@ do:
 
   - <<: *bftp
     rcwd: /tmp/
-    put: TXTEST_WAVE 
+    put: VAR_TX_TEST_WAVE 
     
   - <<: *bci  
-    send: "/pltf/bsp/loadfpgasram TXTEST_WAVE 3 0x0"
+    send: "/pltf/bsp/loadfpgasram VAR_TX_TEST_WAVE 3 0x0"
     expect: "filename"
 
   - <<: *bcis  
@@ -59,14 +59,14 @@ do:
     # address: 135.112.98.43
   - <<: *mxa
     get_channel_power:
-      center: TX_FREQ_SMALL
-      bandwidth: TXTEST_BW
+      center: VAR_TX_TEST_FREQ_SMALL
+      bandwidth: VAR_TX_TEST_BW
     store_regex:
       regexes: '(-?\d.*),'
       store_as: "channel_power"
     check_number:
       input1: channel_power
-      input2: TXPOW_LIM 
+      input2: VAR_TX_TEST_POW_LIM 
       operation: ">"
     print_response:
 
@@ -75,14 +75,14 @@ do:
 
   - <<: *mxa
     get_channel_power:
-      center: TX_FREQ_SMALL
-      bandwidth: TXTEST_BW
+      center: VAR_TX_TEST_FREQ_SMALL
+      bandwidth: VAR_TX_TEST_TEST_BW
     store_regex:
       regexes: '(-?\d.*),'
       store_as: "channel_power2"
     check_number:
       input1: channel_power2
-      input2: TXPOW_LIM 
+      input2: VAR_TX_TEST_POW_LIM 
       operation: "<"
     print_response:
 

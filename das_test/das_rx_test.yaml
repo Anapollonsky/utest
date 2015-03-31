@@ -1,6 +1,6 @@
 do:
   - <<: *bcio
-    send: "/pltf/txPath/setLoFreq 2 RX_FREQ_LARGE"
+    send: "/pltf/txPath/setLoFreq 2 VAR_RX_TEST_FREQ_LARGE"
 
   - <<: *bcio
     send: "/pltf/txPath/SetAttn 10 255"
@@ -27,18 +27,34 @@ do:
     send: "/pltf/rxpath/fpgawrite 0x12 0x0"
 
   - <<: *bci
-    send: "/pltf/bsp/readfpgasram /tmp/RX_FILE 6144000 2 0x01800000"
-    print_response:
-    wait_after: 2
+    send: "/pltf/bsp/readfpgasram /tmp/VAR_RX_TEST_FILE 6144000 2 0x01800000"
+    wait_after: 3
 
   - <<: *bftp
-    get: /tmp/RX_FILE
+    rcwd: /tmp/
+    lcwd: /home/aapollon/utest/das_test
+    get: VAR_RX_TEST_FILE
 
+  - <<: *mxg
+    set_power: -40
+    wait_after: .5
 
+  - <<: *mxg
+    set_freq: VAR_RX_TEST_FREQ_SMALL 
+    wait_after_send: .5
 
+  - <<: *mxg
+    get_power:
+    print_response:
+    wait_after_send: .5
 
-
-
-
-
-
+  - <<: *mxg
+    get_freq:
+    print_response:
+    wait_after_send: .5
+ 
+  - <<: *shell
+    send: ./das_capture_power.m VAR_RX_TEST_FILE 307.2 0 5 
+    # expect: "Power in region"
+    print_response:
+    wait_after_send: .5
