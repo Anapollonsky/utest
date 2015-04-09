@@ -1,0 +1,3 @@
+* BCI
+freq, readsrxpower, two freq outputs of the script
+
