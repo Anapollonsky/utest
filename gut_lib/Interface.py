@@ -1,9 +1,11 @@
 from copy import deepcopy
+import sys
 import time
 import types
 import re
 import inspect
 import operator
+from time import sleep
 
 class Interface(object):
     """Representation of a sent/received frame."""
@@ -28,35 +30,31 @@ class Interactive_Interface(Interface):
     #             self.conman.terror(["Captured rejected substring in response:" + array.strip(), self._response])
 
 
-    def echo(self, command):
+    def echo(self, command, delay = 0):
         self.sendline(command)
+        sleep(delay)
         return self.capture()
         
     def expect_all(self, array, regex = False, timeout = 10):
         """Expect to capture strings
         Tries to capture all members in an array of strings or regexes before time runs out"""
         if not isinstance(array, list): array = [array]
-        diminishing_expect = [re.escape(x) for x in array] if regex == False else array
+        if not regex: array = [re.escape(x) for x in array]
         timer = int(timeout)
-        if hasattr(self, "_response"):
-            for k in diminishing_expect[:]:
-                if re.search(k, self._response):
-                    diminishing_expect.remove(k)
+        capture = ""
         while diminishing_expect:
             captured_lines_local = []
             iter_time = time.time()
             temp_expect = list(diminishing_expect)
-            i = self.expect_message(temp_expect, timer)
+            i = self.expect(temp_expect, timer)
             if i[1] == True:
-                self.conman.terror(["Timeout while waiting for the following substrings:\n" + str(diminishing_expect) + ".", self._response])
+                return diminishing_expect
             timer -= (time.time() - iter_time) # Subtract time it took to capture
-            self._response += i[0] # Captured Value
+            capture += i[0] # Captured Value
             for k in diminishing_expect[:]:
-                if re.search(k, self._response):
+                if re.search(k, capture):
                     captured_lines_local.append(k)
                     diminishing_expect.remove(k)
-            for k in captured_lines_local:
-                self.conman.message(1, "Captured in response: " + k.strip())
-        self._timeout = {"timeout": timer}
+        return capture
 
    

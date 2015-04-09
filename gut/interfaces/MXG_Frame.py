@@ -14,7 +14,7 @@ class MXG_Frame(scpi_Frame):
         except socket.timeout:
             return None
         time.sleep(.8)
-        con.read_very_eager()
+        # con.read_very_eager()
         return con
 
 ################################################################################
@@ -45,7 +45,7 @@ class MXG_Frame(scpi_Frame):
     @command(3)
     def get_freq(self):
         """Get output center frequency"""
-        self._connection.read_very_eager()
+        # self._connection.read_very_eager()
         self.send_string(":FREQ:CW?")
 
     @command(3)

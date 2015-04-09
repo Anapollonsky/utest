@@ -28,7 +28,8 @@ class BCI(Interactive_Interface):
     __init__ = connect
  
     def expect(self, array, timer = 10):
-        """Wait for a message from an array, return either a capture or a timeout."""
+        """Wait for a message from an array, return either a capture and everything
+        preceding it or None in the event of a timeout."""
         array = [array] if isinstance(array, str) else array
         results = self._connection.expect([x.encode('ascii') for x in array], timer)
         if results[0] == -1:
@@ -42,7 +43,7 @@ class BCI(Interactive_Interface):
         self.expect(text)
 
     def capture(self):
-        """Try to capture text without an "expect" clause."""
+        """Capture text without knowing what to 'expect'"""
         time.sleep(.3)
         return self._connection.read_very_eager().decode('ascii')        
 
@@ -60,11 +61,11 @@ class BCI(Interactive_Interface):
         self.sendline("/pltf/txPath/pllStatus")
         return self.expect("ext synth " + str(number) + " is locked")
 
-    def tx_load_waveform(self, filename):
+    def do_tx_load_waveform(self, filename):
         self.sendline("/pltf/bsp/loadfpgasram " + filename + " 3 0x0")
         return self.expect("filename")
 
-    def tx_play_waveform(self):
+    def do_tx_play_waveform(self):
         self.fpga_write(0x18, 0x0)
         self.fpga_write(0xc, 0xF00)
         self.fpga_write(0x1f, 0x0c24)
@@ -73,26 +74,25 @@ class BCI(Interactive_Interface):
         self.fpga_write(0x11, 0x2D34) # DDR Playback scale +3dB
         return self.fpga_write(0x0, 0x4077)
 
-    def tx_set_lo(self, device, freq):
+    def set_tx_lo(self, device, freq):
         """ Frequency in KHz """
         self.sendline("/pltf/txPath/setLoFreq " + str(device) + " " + str(freq))
         return self.expect("OK")
         
-    def tx_set_atten(self, device, value):
+    def set_tx_atten(self, device, value):
         self.sendline("/pltf/txpath/setAttn " + str(device) + " " + str(value))
         return self.expect("OK")
 
-    def tx_set_rf_switches(self, device, path):
+    def set_tx_rf_switches(self, device, path):
         self.sendline("/pltf/txPath/setRfSwitches " + str(device) + " " + str(path))
         return self.expect("SUCCESS")
         
-    def srx_capture(self, filename):
+    def do_srx_capture(self, filename):
         self.fpga_write(0x204, 0x0)
         self.fpga_write(0xd, 0x40)
         self.fpga_write(0x12, 0x3)
         self.fpga_write(0x0, 0xc077)
         self.fpga_write(0x0, 0x4077)
-        
         self.fpga_write(0x12, 0x0)
         self.sendline("/pltf/bsp/readfpgasram " + filename + " 12288000 2 0x01800000")
         return self.expect("reading fpga sram successful")

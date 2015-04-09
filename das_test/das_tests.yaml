@@ -12,11 +12,11 @@ global: # The global block is captured and prepended to every included file.
       VAR_TX_TEST_BW: 10 # MHz
       VAR_TX_TEST_POW_LIM: 10 # dBm
       VAR_SRX_ATTEN: 255
-      VAR_SRX_TEST_FWD_LIM: -50
+      VAR_SRX_TEST_FWD_LIM: -55
       VAR_SRX_TEST_OFF_LIM: -45
       VAR_SRX_TEST_FILE: "random_filename"
-      VAR_RX_TEST_FREQ_SMALL: 800
-      VAR_RX_TEST_FREQ_LARGE: 800000
+      VAR_RX_TEST_FREQ_SMALL: 780 
+      VAR_RX_TEST_FREQ_LARGE: 780000
       VAR_RX_TEST_BW: 10
       VAR_RX_TEST_FILE: "rx_capture.bin"
 

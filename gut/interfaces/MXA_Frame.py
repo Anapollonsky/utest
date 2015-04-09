@@ -96,5 +96,5 @@ class MXA_Frame(scpi_Frame):
         self._connection.read_very_eager()
         time.sleep(.2)
         self.send_string(":READ:CHP?")
-        time.sleep(2)
+        time.sleep(3)
  

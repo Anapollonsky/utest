@@ -1,9 +1,9 @@
 do:
   - <<: *bcio
-    send: "/pltf/txPath/setLoFreq 2 VAR_RX_TEST_FREQ_LARGE"
+    send: "/pltf/rxPath/setLoFreq 2 VAR_RX_TEST_FREQ_LARGE"
 
   - <<: *bcio
-    send: "/pltf/txPath/SetAttn 10 255"
+    send: "/pltf/rxPath/SetAttn 10 255"
 
   - <<: *bcis
     send: "/pltf/rxpath/fpgawrite 0x2a30 0xf"   
@@ -16,7 +16,7 @@ do:
   - <<: *bcis
     send: "/pltf/rxpath/fpgawrite 0xd 0x120" # rx2
   # - <<: *bcis
-  # send: "/pltf/rxpath/fpgawrite 0xd 0x020 # rx1
+  #   send: "/pltf/rxpath/fpgawrite 0xd 0x020" # rx1
   - <<: *bcis
     send: "/pltf/rxpath/fpgawrite 0x12 0x3"
   - <<: *bcis
@@ -28,33 +28,36 @@ do:
 
   - <<: *bci
     send: "/pltf/bsp/readfpgasram /tmp/VAR_RX_TEST_FILE 6144000 2 0x01800000"
-    wait_after: 3
+    wait_after: 9
 
   - <<: *bftp
     rcwd: /tmp/
     lcwd: /home/aapollon/utest/das_test
     get: VAR_RX_TEST_FILE
 
-  - <<: *mxg
-    set_power: -40
-    wait_after: .5
+  # - <<: *mxg
+  #   set_power: -40
+  #   wait_after: .5
 
-  - <<: *mxg
-    set_freq: VAR_RX_TEST_FREQ_SMALL 
-    wait_after_send: .5
+  # - <<: *mxg
+  #   set_freq: VAR_RX_TEST_FREQ_SMALL 
+  #   wait_after_send: .5
 
-  - <<: *mxg
-    get_power:
-    print_response:
-    wait_after_send: .5
+  # - <<: *mxg
+  #   get_power:
+  #   print_response:
+  #   wait_after_send: .5
 
-  - <<: *mxg
-    get_freq:
-    print_response:
-    wait_after_send: .5
+  # - <<: *mxg
+  #   get_freq:
+  #   print_response:
+  #   wait_after_send: .5
  
   - <<: *shell
-    send: ./das_capture_power.m VAR_RX_TEST_FILE 307.2 0 5 
+    send: ./das_capture_power.m VAR_RX_TEST_FILE 307.2 0 20 
     # expect: "Power in region"
     print_response:
-    wait_after_send: .5
+    wait_after_send: 1.5
+
+
+  
