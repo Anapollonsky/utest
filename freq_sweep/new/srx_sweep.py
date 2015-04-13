@@ -15,14 +15,14 @@ parser.add_argument("band", help="hb/lb, highband or lowband")
 parser.add_argument("tx", help="transmitter 1/2")
 parser.add_argument("board", help="board address")
 parser.add_argument("mxa", help="mxa address, expected model N9020A")
-parser.add_argument("-s", "--step", help="step size, in khz", default = 1000)
-parser.add_argument("-b", "--bandwidth", help="bandwidth, in khz", default = 5000)
+parser.add_argument("-s", "--step", help="step size, in hz", default = 1e6, type=float)
+parser.add_argument("-b", "--bandwidth", help="bandwidth, in hz", default = 5e6, type=float)
 parser.add_argument("-w", "--waveform", help="waveform filename" , default = "LTE_5MHz_1Carrier.bin")
 args = parser.parse_args() # Parse arguments
 
 ## Variable Configuration
-bands = {"lb": [717000, 894000],
-         "hb": [1805000, 2200000]}
+bands = {"lb": [717e6, 894e6],
+         "hb": [1805e6, 2.2e9]}
 board = args.board
 mxaaddr = args.mxa
 lofreq = bands[args.band][0] # Goes by 'step' from lofreq (inclusive) to highfreq (inclusive)
@@ -80,17 +80,17 @@ print("Initial Setup Completed...")
 with open(csv_filename, 'w') as csvfile:
     ## CSV Header
     csvwriter = csv.writer(csvfile)
-    csvwriter.writerow(["SRX Attenuation: " + str(srx_atten),
-                        "TX Internal Attenuation: " + str(txi_atten),
-                        "TX External Attenuation: " + str(txe_atten)])
     csvwriter.writerow([str(x) + ": " + str(y) for (x, y) in vars(args).items()]) # extract arguments, put in .csv file
+    csvwriter.writerow(["SRX Attenuation: " + str(srx_atten)])
+    csvwriter.writerow(["TX Internal Attenuation: " + str(txi_atten)])
+    csvwriter.writerow(["TX External Attenuation: " + str(txe_atten)])
     csvwriter.writerow([])
 
     # Data
-    for freq in range(lofreq, hifreq + 1, int(step)):
+    for freq in range(int(lofreq), int(hifreq) + 1, int(step)):
         filename = "srx_capture"
         bci.set_lo(0, freq)
-        mxa.set_freq(freq, "KHz")
+        mxa.set_freq(freq)
         sleep(1)
         srxpower = bci.get_srx_power(0)
         chanpwr, _ = mxa.get_chanpwr_psd()
@@ -100,11 +100,10 @@ with open(csv_filename, 'w') as csvfile:
             bci.do_srx_capture("/tmp/" + filename)
         sh.sendline("rm -f " + filename)
         ftp.get("/tmp/" + filename)
-
+        
         ## Octave
-        sh.sendline("./das_capture_power.m %s 307.2 0 %d" % (filename, int(bandwidth/1000)))
+        sh.sendline("./das_capture_power.m %s 307.2 0 %d" % (filename, int(bandwidth/1e6)))
         capture = sh.expect("Power in region: .*\d\.")
-        print(capture)
         pwrtime, pwrfreq, regionpwr = re.search("RMS Power: (\-?\d+\.\d+).*RMS Power: (\-?\d+\.\d+).*region: (\-?\d+\.\d+)\.", capture).groups()
 
         ## Bookkeeping
