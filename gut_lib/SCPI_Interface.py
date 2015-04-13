@@ -1,4 +1,4 @@
-import time
+from time import sleep
 import telnetlib
 import socket
 from Interface import Interactive_Interface
@@ -11,7 +11,7 @@ class SCPI(Interactive_Interface):
             con = telnetlib.Telnet(address, 5023, 10)
         except socket.timeout:
             return None
-        time.sleep(.8)
+        sleep(.8)
         con.read_very_eager()
         self._address = address
         self._connection = con
@@ -29,11 +29,11 @@ class SCPI(Interactive_Interface):
     def sendline(self, text):
         """Transmit a frame object's content to intended recipient."""
         self._connection.write(text.encode('ascii') + b"\n")
-        # self.expect(text)
+        sleep(.2)
 
     def capture(self):
         """Try to capture text without an "expect" clause."""
-        time.sleep(.3)
+        sleep(.3)
         return self._connection.read_very_eager().decode('ascii')        
 
     def close(self):

@@ -35,9 +35,9 @@ class FTP(Interface):
         """ Change local working directory. """
         os.chdir(directory)
         
-    def put(self, filename):
+    def put(self, filename, destination = ""):
         """Transfer a file to the server. Binary mode by default."""
-        self._connection.storbinary("STOR " + filename, open(ntpath.basename(filename), "rb")) 
+        self._connection.storbinary("STOR " + destination + filename, open(ntpath.basename(filename), "rb")) 
 
     def get(self, filename):
         """Transfer a file from the server. Binary mode by default."""
