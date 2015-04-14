@@ -20,7 +20,7 @@ class SCPI(Interactive_Interface):
         """Wait for a message from an array, return either a capture and everything
         preceding it or None in the event of a timeout."""
         array = [array] if isinstance(array, str) else array
-        results = self._connection.expect([x.encode('ascii') for x in array], timer)
+        results = self._connection.expect([x.encode('ascii') for x in array], timeout = timer)
         if results[0] == -1:
             return None
         else:

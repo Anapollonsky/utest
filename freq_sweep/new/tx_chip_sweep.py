@@ -3,11 +3,14 @@ from Shell_Interface import Shell
 from FTP_Interface import FTP
 from N9020A_Interface import N9020A
 from time import sleep
+import datetime
 from math import log
 import csv
 import re
 import os
 import argparse
+
+VERSION = 1
 
 ## Argument parsing
 parser = argparse.ArgumentParser()
@@ -18,27 +21,46 @@ parser.add_argument("mxa", help="mxa address, expected model N9020A")
 parser.add_argument("-s", "--step", help="step size, in hz", default = 1e6, type=float)
 parser.add_argument("-b", "--bandwidth", help="bandwidth, in hz", default = 5e6, type=float)
 parser.add_argument("-w", "--waveform", help="waveform filename" , default = "Chipmix_APT_duc_2lte_mode7_evm.bin")
+parser.add_argument("-c", "--center", help="lo center frequency", default = None)
+parser.add_argument("--version", help="print out version and exit",
+                    action='version', version='%(prog)s ' + str(VERSION))
+
 args = parser.parse_args() # Parse arguments
 
 ## Variable Configuration
-bands = {"lb": [717e6, 894e6],
-         "hb": [1805e6, 2.2e9]}
-center_freqs = {a:(bands[a][0] + bands[a][1])/2 for a in bands}
-ranges = {a:[center_freqs[a] - 30e6, center_freqs[a] + 30e6] for a in center_freqs}
-
+band_info = {"lb": {
+                 "lofreq": 700e6,
+                 "hifreq": 900e6,
+                 "srx_atten": 250, #5db
+                 "txi_atten": 100, #5db
+                 "txe_atten": 725,
+             },
+             "hb": {
+                 "lofreq": 1805e6, 
+                 "hifreq": 2.2e9,
+                 "srx_atten": 255, #5db
+                 "txi_atten": 100, #5db
+                 "txe_atten": 475,
+             }
+}
+for band in band_info:
+    band_info[band]["cenfreq"] = int(float(args.center)) if args.center else (band_info[band]["lofreq"] + band_info[band]["hifreq"]) / 2
+    band_info[band]["lorang"] = band_info[band]["cenfreq"] - 30e6
+    band_info[band]["hirang"] = band_info[band]["cenfreq"] + 30e6
 
 board = args.board
 mxaaddr = args.mxa
-lofreq = ranges[args.band][0] # Goes by 'step' from lofreq (inclusive) to highfreq (inclusive)
-hifreq = ranges[args.band][1]
+lofreq = band_info[args.band]["lorang"] 
+hifreq = band_info[args.band]["hirang"] 
 step = args.step 
 bandwidth = args.bandwidth 
 waveform = args.waveform 
-csv_filename = "tx_chip_sweep_%s_%s_%s_%s.csv" % (args.band, args.tx, args.board, args.mxa)
+timestamp =  datetime.datetime.now().strftime('%Y-%m-%d_%H:%M')
+csv_filename = "tx_chip_sweep_%s_%s_%s_%s.csv" % (args.band, args.tx, args.board, timestamp)
 
-srx_atten = 250 # 5dB
-txi_atten = 100 # 5dB
-txe_atten = 725 
+srx_atten = band_info[args.band]["srx_atten"]
+txi_atten = band_info[args.band]["txi_atten"]
+txe_atten = band_info[args.band]["txe_atten"]
 
 ## Connections
 bci = BCI(board, "lucent", "password")
@@ -51,49 +73,61 @@ print("Connections established...")
 bci.set_output(False)
 bci.set_output(True)
 
-# Attenuation
+# Transmitter 
 bci.set_atten(8, srx_atten) # srx
-bci.set_atten(1, txi_atten) # Internal TX 
-bci.set_atten(0, txi_atten)
-bci.set_atten(4, txe_atten) # External TX
-bci.set_atten(5, txe_atten)
-
-# bci.set_tone_gain(0)
-
-# Transmitter
 if args.tx == "1":
     bci.set_tx_rf_switches(0, 3)
+    bci.set_atten(1, txi_atten) # Internal TX1
+    bci.set_atten(5, txe_atten) # External TX1
+    bci.set_atten(0, 480)       # Max out Internal TX2
+    bci.set_atten(4, 1023)      # Max out External TX2
+
 elif args.tx == "2":
     bci.set_tx_rf_switches(0, 0)
+    bci.set_atten(0, txi_atten) # Internal TX2
+    bci.set_atten(4, txe_atten) # External TX2
+    bci.set_atten(1, 480)       # Max out Internal TX1
+    bci.set_atten(5, 1023)      # Max out External TX1
 
-# Lock
-center_freq = (hifreq + lofreq) / 2
-bci.set_lo(0, center_freq)
+#Lock
+bci.set_lo(0, band_info[args.band]["cenfreq"])
 assert bci.ensure_reference_pll_lock("EXT", 1)
 print("Board configured...")
 
+# Other BCI
+bci.sendline("/pltf/txpath/txlointleakagecorrectInit")
+bci.expect("SUCCESS")
+bci.sendline("/pltf/txpath/txqecinit")
+bci.expect("SUCCESS")
+
 # MXA Setup
 mxa.do_jeff_mxa_setup()
-mxa.set_freq(center_freq)
+mxa.set_freq(band_info[args.band]["cenfreq"])
 print("MXA configured...")
 
 # Waveform
 ftp.put(waveform, "/tmp/")
 print("Waveform transferred...")
 
+
+print("Writing to " + csv_filename)
 with open(csv_filename, 'w') as csvfile:
     ## CSV Header
     csvwriter = csv.writer(csvfile)
-    csvwriter.writerow([str(x) + ": " + str(y) for (x, y) in vars(args).items()]) # extract arguments, put in .csv file
+    csvwriter.writerow(["tx_chip_sweep.py version: " + str(VERSION)])
+    for member in [str(x) + ": " + str(y) for (x, y) in vars(args).items()]: # extract arguments, put in .csv file
+        csvwriter.writerow([member])
     csvwriter.writerow(["SRX Attenuation: " + str(srx_atten)])
     csvwriter.writerow(["TX Internal Attenuation: " + str(txi_atten)])
     csvwriter.writerow(["TX External Attenuation: " + str(txe_atten)])
     csvwriter.writerow([])
+    csvwriter.writerow(["Frequency", "Channel Power", "readsrxpower", "Time-Domain Power",
+                        "Freq-Domain Power", "Bandwidth Power"])
 
     # Data
     for freq in range(int(lofreq), int(hifreq) + 1, int(step)):
         filename = "srx_capture"
-        offset = int(freq - center_freq) 
+        offset = int(freq - band_info[args.band]["cenfreq"]) 
         bci.do_chiprate_play_waveform("/tmp/" + waveform, offset, 0)
         mxa.set_freq(freq)
         sleep(2)
@@ -108,8 +142,8 @@ with open(csv_filename, 'w') as csvfile:
         
         ## Octave
         sh.sendline("./das_capture_power.m %s 307.2 %d %d" % (filename, (offset/1e6), int(bandwidth/1e6)))
-        capture = sh.expect("Power in region: .*\d\.")
-        pwrtime, pwrfreq, regionpwr = re.search("RMS Power: (\-?\d+\.\d+).*RMS Power: (\-?\d+\.\d+).*region: (\-?\d+\.\d+)\.", capture).groups()
+        capture = sh.expect("Power in region: .*\d\.\d{2}")
+        pwrtime, pwrfreq, regionpwr = re.search("RMS Power: (\-?\d+\.?\d*).*RMS Power: (\-?\d+\.?\d*).*region: (\-?\d+\.?\d*)", capture).groups()
 
         ## Bookkeeping
         row = [float(freq), float(chanpwr), float(srxpower), float(pwrtime), float(pwrfreq), float(regionpwr)]

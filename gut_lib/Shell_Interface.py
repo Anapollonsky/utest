@@ -25,7 +25,7 @@ class Shell(Interactive_Interface):
             self._connection.read_nonblocking(size=1000, timeout=.01)
         except:
             pass
-        # time.sleep(.1)
+        time.sleep(.1)
 
     def expect(self, array, timer = 10):
         """Wait for a message from an array, return either a capture or a timeout."""

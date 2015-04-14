@@ -44,14 +44,13 @@ band_info = {"lb": {
 }
 board = args.board
 mxaaddr = args.mxa
-lofreq = band_info[args.band]["lofreq"] # Goes by 'step' from lofreq (inclusive) to highfreq (inclusive)
+lofreq = band_info[args.band]["lofreq"] 
 hifreq = band_info[args.band]["hifreq"]
 step = args.step 
 bandwidth = args.bandwidth 
 waveform = args.waveform
 timestamp =  datetime.datetime.now().strftime('%Y-%m-%d_%H:%M')
-csv_filename = "srx_sweep_%s_%s_%s_%s.csv" % (args.band, args.tx, args.board, timestamp)
-                                                 
+csv_filename = "tx_lo_sweep_%s_%s_%s_%s.csv" % (args.band, args.tx, args.board, timestamp)
 
 srx_atten = band_info[args.band]["srx_atten"]
 txi_atten = band_info[args.band]["txi_atten"]
@@ -68,10 +67,10 @@ print("Connections established...")
 bci.set_output(False)
 bci.set_output(True)
 
-# Attenuation
-bci.set_atten(8, srx_atten) # srx
 
 # Transmitter
+# Note, set_atten indices are correct for DAS SW v94 and later.
+bci.set_atten(8, srx_atten) # srx
 if args.tx == "1":
     bci.set_tx_rf_switches(0, 3)
     bci.set_atten(1, txi_atten) # Internal TX1
@@ -100,6 +99,7 @@ ftp.put(waveform, "/tmp/")
 bci.do_tx_play_waveform("/tmp/" + waveform) 
 print("Initial Setup Completed...")
 
+print("Writing to " + csv_filename)
 with open(csv_filename, 'w') as csvfile:
     ## CSV Header
     csvwriter = csv.writer(csvfile)
@@ -130,8 +130,8 @@ with open(csv_filename, 'w') as csvfile:
         
         ## Octave
         sh.sendline("./das_capture_power.m %s 307.2 0 %d" % (filename, int(bandwidth/1e6)))
-        capture = sh.expect("Power in region: .*\d\.")
-        pwrtime, pwrfreq, regionpwr = re.search("RMS Power: (\-?\d+\.?\d*).*RMS Power: (\-?\d+\.?\d*).*region: (\-?\d+\.?\d*)\.", capture).groups()
+        capture = sh.expect("Power in region: .*\d+\.\d+")
+        pwrtime, pwrfreq, regionpwr = re.search("RMS Power: (\-?\d+\.?\d*).*RMS Power: (\-?\d+\.?\d*).*region: (\-?\d+\.?\d*)", capture).groups()
 
         ## Bookkeeping
         row = [float(freq), float(chanpwr), float(srxpower), float(pwrtime), float(pwrfreq), float(regionpwr)]
