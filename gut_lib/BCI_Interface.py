@@ -155,26 +155,38 @@ class BCI(Interactive_Interface):
         self.sendline("/pltf/bsp/readfpgasram " + filename + " 6144000 2 0x01800000")
         return self.expect("reading fpga sram successful")
 
-    def set_tone_freq(self, hz):
+    def set_tone_freq(self, hz, wave=1):
         #  DUC NCO frequency:  14-bit 2s-complement, 10kHz step, +/-45MHz
         #   ex:  carrier1: +10MHz = 1000 = 0x3E8;  carrier2: -10MHz = -1000 = 0x3C18
         if hz > 0:
             freq = hex(int(hz/10000))
         else:
             freq = hex(((abs(int(hz/10000)) ^ 0x3fff) + 1) & 0x3fff)
+        if wave == 1:
+            dest = 0x1060
+        elif wave == 2:
+            dest = 0x1061
         self.fpga_write(0x1060, freq)
+        self.fpga_write(0x1061, freq)
 
-    def set_tone_gain(self, db):
+
+    def set_tone_gain(self, db, wave=1):
         #####  per carrier TX gain (before DUC): gain(dB)=20*log10(TX_GAIN/8192); 0x2000=unity, 0x2D34=3dB, 0x1000=-6dB
         gain = hex(int((10 ** (db / 20)) * 8192))
-        self.fpga_write(0x1010, gain)
-        self.fpga_write(0x1011, gain)
-        self.fpga_write(0x1012, 0x0000)
-        self.fpga_write(0x1013, 0x0000)
-        self.fpga_write(0x1014, gain)
-        self.fpga_write(0x1015, gain)
-        self.fpga_write(0x1016, 0x0000)
-        self.fpga_write(0x1017, 0x0000)
+        if wave == 1:
+            gain1 = gain
+            gain2 = 0x0000
+        elif wave == 2:
+            gain1 = 0x0000
+            gain2 = gain
+        self.fpga_write(0x1010, gain1)
+        self.fpga_write(0x1011, gain1)
+        self.fpga_write(0x1012, gain2)
+        self.fpga_write(0x1013, gain2)
+        self.fpga_write(0x1014, gain1)
+        self.fpga_write(0x1015, gain1)
+        self.fpga_write(0x1016, gain2)
+        self.fpga_write(0x1017, gain2)
 
     def do_test_tone(self, offset = 0, gain = 0):
         ##### Sequence Source: Mike Pizzarusso
@@ -200,12 +212,12 @@ class BCI(Interactive_Interface):
         self.fpga_write(0x1070, 0x2)
         #####  DEV_CTRL1: normal operation (0x77), turn on playback: 0x4077
 
-    def do_chiprate_play_waveform(self, filename, offset = 0, gain = 0):
+    def do_chiprate_play_waveform(self, filename, offset = 0, gain = 0, wave = 1):
         #####################################################################
         #####  playback 2 carriers per diversity
 
         #####  force LMK to use 15.36 MHz test reference instead of recovered CPRI clock
-        self.fpga_write(0x206, 0x5000)
+        # self.fpga_write(0x206, 0x5000)
         #####  load waveform binary into DDR
         #####   PS DDR: <file>, 3, 0x0
         #####   PL DDR: <file>, 2, 0x0
@@ -215,17 +227,21 @@ class BCI(Interactive_Interface):
         self.fpga_write(0x18, 0x0000)
         self.fpga_write(0x19, 0x0F1F)
         self.fpga_write(0x1E, 0xFFFF)
+        self.fpga_write(0x1F, 0xFFFF)
         #####  DDR base addr (PL DDR)
         #fpgawrite 0x18 0x0000
         #fpgawrite 0x19 0x5800
         #####  SDRAM1_MODE: bits(2:0)
         #####   0x1: TX_TDMA_INS (chip rate)
         self.fpga_write(0x10, 0x0001)
-
-        self.set_tone_gain(gain)
-        self.set_tone_freq(offset)
+        self.set_tone_gain(gain, wave)
+        self.set_tone_freq(offset, wave)
         #####  DUC carrier bandwidth bits(2:0):  2=5MHz, 3=10MHz, 5=20MHz, 7=BW_LTE_10M_5M (c0 and c1 have different BWs)
-        self.fpga_write(0x1070, 0x2)
+        # self.fpga_write(0x1070, 0x2)
+        if wave == 1:
+            self.fpga_write(0x1070, 0x2)
+        elif wave == 2:
+            self.fpga_write(0x1071, 0x2)
         #####  DEV_CTRL1: normal operation (0x77), turn on playback: 0x4077
         self.fpga_write(0x0, 0x4077)
 
@@ -234,7 +250,7 @@ class BCI(Interactive_Interface):
         #####  playback 2 carriers per diversity
 
         #####  force LMK to use 15.36 MHz test reference instead of recovered CPRI clock
-        self.fpga_write(0x206, 0x5000)
+        # self.fpga_write(0x206, 0x5000)
         #####  load waveform binary into DDR
         #####   PS DDR: <file>, 3, 0x0
         #####   PL DDR: <file>, 2, 0x0
@@ -244,29 +260,53 @@ class BCI(Interactive_Interface):
         self.fpga_write(0x18, 0x0000)
         self.fpga_write(0x19, 0x0F1F)
         self.fpga_write(0x1E, 0xFFFF)
+        self.fpga_write(0x1F, 0xFFFF)
         #####  DDR base addr (PL DDR)
         #fpgawrite 0x18 0x0000
         #fpgawrite 0x19 0x5800
         #####  SDRAM1_MODE: bits(2:0)
         #####   0x1: TX_TDMA_INS (chip rate)
+        # self.fpga_write(0x0C, 0x0000)
         self.fpga_write(0x10, 0x0001)
         #####  per carrier TX gain (before DUC): gain(dB)=20*log10(TX_GAIN/8192); 0x2000=unity, 0x2D34=3dB, 0x1000=-6dB
         #####   divAc1, divBc1, divAc2, divBc2, divCc1, divDc1, divCc2, divDc2
         self.fpga_write(0x1010, 0x1000)
         self.fpga_write(0x1011, 0x1000)
-        self.fpga_write(0x1012, 0x0000)
-        self.fpga_write(0x1013, 0x0000)
+        self.fpga_write(0x1012, 0x1000)
+        self.fpga_write(0x1013, 0x1000)
         self.fpga_write(0x1014, 0x1000)
         self.fpga_write(0x1015, 0x1000)
-        self.fpga_write(0x1016, 0x0000)
-        self.fpga_write(0x1017, 0x0000)
+        self.fpga_write(0x1016, 0x1000)
+        self.fpga_write(0x1017, 0x1000)
         #####  DUC NCO frequency:  14-bit 2s-complement, 10kHz step, +/-45MHz
         #####   ex:  carrier1: +10MHz = 1000 = 0x3E8;  carrier2: -10MHz = -1000 = 0x3C18
         # self.fpga_write(0x1060, 0x03E8)
-        self.fpga_write(0x1060, 0x3C18)
+        self.fpga_write(0x1060, 0x03E8)
+        self.fpga_write(0x1061, 0x3C18)
         #####  DUC carrier bandwidth bits(2:0):  2=5MHz, 3=10MHz, 5=20MHz, 7=BW_LTE_10M_5M (c0 and c1 have different BWs)
         self.fpga_write(0x1070, 0x2)
+        self.fpga_write(0x1071, 0x2)
         #####  DEV_CTRL1: normal operation (0x77), turn on playback: 0x4077
         self.fpga_write(0x0, 0x4077)
 
-       
+    def do_paul_chiprate(self, filename):
+        self.sendline("/pltf/bsp/loadfpgaSram %s 3 0x0" % filename)
+        self.expect("CLI_OK")
+        self.fpga_write(0x18, 0x0)
+        self.fpga_write(0x19, 0x0f1f)
+        self.fpga_write(0xc, 0x0)
+        self.fpga_write(0x10, 0x1)
+        self.fpga_write(0x1010, 0x0)
+        self.fpga_write(0x1011, 0x0)
+        self.fpga_write(0x1012, 0x2d34)
+        self.fpga_write(0x1013, 0x2d34)
+        self.fpga_write(0x1014, 0x0)
+        self.fpga_write(0x1015, 0x0)
+        self.fpga_write(0x1016, 0x2d34)
+        self.fpga_write(0x1017, 0x2d34)
+        self.fpga_write(0x1060, 0x0)
+        self.fpga_write(0x1061, 0x0)
+        self.fpga_write(0x1070, 0x7)
+        self.fpga_write(0x1071, 0x7)
+        self.fpga_write(0x0, 0x4077)
+

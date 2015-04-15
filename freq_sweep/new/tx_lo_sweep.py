@@ -35,11 +35,11 @@ band_info = {"lb": {
                  "txe_atten": 725,
              },
              "hb": {
-                 "lofreq": 1805e6, 
+                 "lofreq": 1710e6, 
                  "hifreq": 2.2e9,
-                 "srx_atten": 250, #5db
+                 "srx_atten": 255, #0db
                  "txi_atten": 100, #5db
-                 "txe_atten": 725,
+                 "txe_atten": 0,
              }
 }
 board = args.board
@@ -49,7 +49,7 @@ hifreq = band_info[args.band]["hifreq"]
 step = args.step 
 bandwidth = args.bandwidth 
 waveform = args.waveform
-timestamp =  datetime.datetime.now().strftime('%Y-%m-%d_%H:%M')
+timestamp =  datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')
 csv_filename = "tx_lo_sweep_%s_%s_%s_%s.csv" % (args.band, args.tx, args.board, timestamp)
 
 srx_atten = band_info[args.band]["srx_atten"]
