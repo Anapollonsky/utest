@@ -3,7 +3,6 @@ import re
 from SCPI_Interface import SCPI
 
 class N9020A(SCPI):
-
     __init__ = SCPI.connect
 
     def set_marker_mode(self, ind, mode):
@@ -101,6 +100,11 @@ class N9020A(SCPI):
         capture = self.expect(regex, 20)
         return tuple(float(x)for x in re.search(regex, capture).groups()) 
 
+    def get_external_gain(self):
+        capture = self.echo(":CORR:SA:GAIN?")
+        value = re.search("(\-?\d\S+)", capture).groups()[0]
+        return int(float(value))
+    
     def do_manual_alignment(self):
         self.sendline("CAL:EXP?")
         self.expect("0")
@@ -118,6 +122,8 @@ class N9020A(SCPI):
         self.set_ref_level(10)
         self.set_detector("AVER")
         self.set_mode("CHP")
+        self.sendline("CHP:FREQ:SYNT:AUTO ON")
+        self.sendline("CHP:IF:GAIN:AUTO ON")
         self.set_averaging_count(500)
         self.set_integration_bandwidth(5e6)
         self.set_resolution_bandwidth(3e4)

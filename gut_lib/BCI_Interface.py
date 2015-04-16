@@ -144,6 +144,17 @@ class BCI(Interactive_Interface):
         capture = self.expect("SUCCESS")
         return float(re.search('Srx power = (\-?\d+\.?\d+)', capture).group(1))
 
+    def get_rx_power(self, device, port, bandwidth=5e6):
+        mapping = {"5000000.0": (0x3, 1),
+                   "10000000.0": (0x4, 2),
+                   "15000000.0": (0x5, 3),
+                   "20000000.0": (0x6, 4)}
+        self.fpga_write(0x2a10, mapping[str(bandwidth)][0])
+        capture = self.echo("/pltf/rxpath/readrxpower %d %d %d" % (int(device),
+                                                                   int(port),
+                                                                   int(mapping[str(bandwidth)][1])))
+        return float(re.search("power =\s*(.+) dBFS", capture).groups()[0])
+    
     def do_rx_capture(self, filename, rx):
         rx_value = 0x020 if rx == 1 else 0x120
         self.fpga_write(0x2a30, 0xf)
@@ -168,7 +179,6 @@ class BCI(Interactive_Interface):
             dest = 0x1061
         self.fpga_write(0x1060, freq)
         self.fpga_write(0x1061, freq)
-
 
     def set_tone_gain(self, db, wave=1):
         #####  per carrier TX gain (before DUC): gain(dB)=20*log10(TX_GAIN/8192); 0x2000=unity, 0x2D34=3dB, 0x1000=-6dB
@@ -240,7 +250,9 @@ class BCI(Interactive_Interface):
         # self.fpga_write(0x1070, 0x2)
         if wave == 1:
             self.fpga_write(0x1070, 0x2)
+            self.fpga_write(0x1071, 0x0)
         elif wave == 2:
+            self.fpga_write(0x1070, 0x0)
             self.fpga_write(0x1071, 0x2)
         #####  DEV_CTRL1: normal operation (0x77), turn on playback: 0x4077
         self.fpga_write(0x0, 0x4077)

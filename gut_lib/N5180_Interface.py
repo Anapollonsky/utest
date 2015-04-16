@@ -4,6 +4,18 @@ import socket
 from SCPI_Interface import SCPI
 
 class N5180(SCPI):
+
+    # def __init__(self, address):
+    #     """ Connection procedure for remote shell."""
+    #     try:
+    #         con = telnetlib.Telnet(address, 5024, 10)
+    #     except socket.timeout:
+    #         return None
+    #     sleep(.8)
+    #     con.read_very_eager()
+    #     self._address = address
+    #     self._connection = con
+
     __init__ = SCPI.connect
 
 ################################################################################
@@ -12,22 +24,21 @@ class N5180(SCPI):
     def set_output(self, state):
         """Set output to 1/on or 0/off"""
         state = "ON" if state else "OFF"
-        self.echo("OUTPUT:STATE " + str(state))
+        return self.echo("OUTPUT:STATE " + str(state))
 
     def set_freq(self, freq):
         """Permanently set output center frequency, in MHz by default"""
-        self.sendline(":FREQ:MODE CW")
-        self.capture()
-        self.echo(":FREQ:CW " + str(freq) + " HZ")
+        # self.echo(":FREQ:MODE CW")
+        return self.echo(":FREQ:CW " + str(freq) + " HZ")
 
     def get_freq(self):
         """Get output center frequency"""
-        self.echo(":FREQ:CW?")
+        return self.echo(":FREQ:CW?")
 
     def set_power(self, power):
         """ Set output power """
-        self.echo(":POW:AMPL " + str(power) + " W")
+        return self.echo(":POW:AMPL " + str(power) + " DB")
 
     def get_power(self):
         """ Get output power """
-        self.echo(":POW:AMPL?")
+        return self.echo(":POW:AMPL?")

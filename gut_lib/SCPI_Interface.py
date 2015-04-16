@@ -28,13 +28,13 @@ class SCPI(Interactive_Interface):
 
     def sendline(self, text):
         """Transmit a frame object's content to intended recipient."""
-        self._connection.write(text.encode('ascii') + b"\n")
+        self._connection.write(text.encode('ascii') + b"\r\n")
         sleep(.2)
 
     def capture(self):
         """Try to capture text without an "expect" clause."""
         sleep(.3)
-        return self._connection.read_very_eager().decode('ascii')        
+        return self._connection.read_very_eager().decode('ascii') 
 
     def close(self):
         self._connection.close()
