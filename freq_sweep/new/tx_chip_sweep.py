@@ -10,7 +10,7 @@ import re
 import os
 import argparse
 
-VERSION = 1
+VERSION = 2
 
 ## Constants
 band_info = {"lb": {
@@ -21,7 +21,7 @@ band_info = {"lb": {
                  "txe_atten": 725,
              },
              "hb": {
-                 "lofreq": 1805e6, 
+                 "lofreq": 1710e6, 
                  "hifreq": 2.2e9,
                  "srx_atten": 255, #0db
                  "txi_atten": 100, #5db
@@ -93,6 +93,10 @@ elif args.tx == "2":
     bci.set_atten(1, 480)       # Max out Internal TX1
     bci.set_atten(5, 1023)      # Max out External TX1
 
+# Capture filename
+pid = os.getpid()
+filename = "srx_capture" + str(pid)
+
 #Lock
 bci.set_lo(0, band_info[args.band]["cenfreq"])
 assert bci.ensure_reference_pll_lock("EXT", 1)
@@ -110,18 +114,14 @@ bci.fpga_write(0x0C, 0x0000)
 # MXA Setup
 mxa.do_jeff_mxa_setup()
 mxa.set_freq(band_info[args.band]["cenfreq"])
-# mxa.set_span(30e6)
-# mxa.set_averaging_count(5)
+mxa_ext_gain = mxa.get_external_gain()
 print("MXA configured...")
 
 # Waveform
 ftp.put(waveform, "/tmp/")
-
 bci.do_mike_chiprate("/tmp/" + waveform)
-
-# bci.do_mike_chiprate("/tmp/" + waveform)
-# bci.do_paul_chiprate("/tmp/" + waveform)
-# bci.do_chiprate_play_waveform("/tmp/" + waveform, -13e6, -3, wave=2)
+bci.do_mike_chiprate("/tmp/" + waveform)
+print("Initial Setup Completed...")
 
 print("Writing to " + csv_filename)
 with open(csv_filename, 'w') as csvfile:
@@ -133,13 +133,13 @@ with open(csv_filename, 'w') as csvfile:
     csvwriter.writerow(["SRX Attenuation: " + str(srx_atten)])
     csvwriter.writerow(["TX Internal Attenuation: " + str(txi_atten)])
     csvwriter.writerow(["TX External Attenuation: " + str(txe_atten)])
+    csvwriter.writerow(["MXA External Gain: " + str(mxa_ext_gain) + "dB"])
     csvwriter.writerow([])
     csvwriter.writerow(["Frequency", "Channel Power", "readsrxpower", "Time-Domain Power",
                         "Freq-Domain Power", "Bandwidth Power"])
 
     # Data
     for freq in range(int(lofreq), int(hifreq) + 1, int(step)):
-        filename = "srx_capture"
         offset = int(freq - band_info[args.band]["cenfreq"]) 
         bci.do_chiprate_play_waveform("/tmp/" + waveform, offset, 3, 2)
         mxa.set_freq(freq)
@@ -148,9 +148,9 @@ with open(csv_filename, 'w') as csvfile:
         chanpwr, _ = mxa.get_chanpwr_psd()
 
         ## Capture
+        sh.sendline("rm -f " + filename)
         for k in range(3): # Prevent repetition of data
             bci.do_srx_capture("/tmp/" + filename)
-        sh.sendline("rm -f " + filename)
         ftp.get("/tmp/" + filename)
         
         ## Octave

@@ -10,7 +10,7 @@ import re
 import os
 import argparse
 
-VERSION = 1
+VERSION = 3
 
 ## Argument parsing
 parser = argparse.ArgumentParser()
@@ -85,6 +85,10 @@ elif args.tx == "2":
     bci.set_atten(1, 480)       # Max out Internal TX1
     bci.set_atten(5, 1023)      # Max out External TX1
 
+# Capture filename
+pid = os.getpid()
+filename = "srx_capture" + str(pid)
+    
 # Lock
 bci.set_lo(0, lofreq)
 assert bci.ensure_reference_pll_lock("EXT", 1)
@@ -92,6 +96,7 @@ print("Board configured...")
 
 # MXA Setup
 mxa.do_jeff_mxa_setup()
+mxa_ext_gain = mxa.get_external_gain()
 print("MXA Configured...")
 
 # Waveform
@@ -109,13 +114,13 @@ with open(csv_filename, 'w') as csvfile:
     csvwriter.writerow(["SRX Attenuation: " + str(srx_atten)])
     csvwriter.writerow(["TX Internal Attenuation: " + str(txi_atten)])
     csvwriter.writerow(["TX External Attenuation: " + str(txe_atten)])
+    csvwriter.writerow(["MXA External Gain: " + str(mxa_ext_gain) + "dB"])
     csvwriter.writerow([])
     csvwriter.writerow(["Frequency", "Channel Power", "readsrxpower", "Time-Domain Power",
                         "Freq-Domain Power", "Bandwidth Power"])
 
     # Data
     for freq in range(int(lofreq), int(hifreq) + 1, int(step)):
-        filename = "srx_capture"
         bci.set_lo(0, freq)
         mxa.set_freq(freq)
         sleep(1)
@@ -123,9 +128,9 @@ with open(csv_filename, 'w') as csvfile:
         chanpwr, _ = mxa.get_chanpwr_psd()
 
         ## Capture
+        sh.sendline("rm -f " + filename)
         for k in range(3): # Prevent repetition of data
             bci.do_srx_capture("/tmp/" + filename)
-        sh.sendline("rm -f " + filename)
         ftp.get("/tmp/" + filename)
         
         ## Octave
