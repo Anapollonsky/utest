@@ -57,8 +57,12 @@ print("Connections established...")
 
 # Transmitter
 rx_atten = band_info[args.band]["rx_atten"]
-bci.set_atten(10, rx_atten) 
-bci.set_atten(11, rx_atten) 
+if args.rx == "1":
+    bci.set_atten(10, rx_atten) 
+    bci.set_atten(11, 235)
+elif args.rx == "2":
+    bci.set_atten(10, 235)
+    bci.set_atten(11, rx_atten) 
 
 # Capture filename
 pid = os.getpid()
@@ -73,7 +77,6 @@ print("Board configured...")
 mxg.set_power(20)
 mxg.set_output(True)
 print("MXG Configured...")
-
 
 print("Initial Setup Completed...")
 
