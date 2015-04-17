@@ -5,12 +5,12 @@ band_info:
     srx_atten: 250 #5dB
     txi_atten: 100 #5db
     txe_atten: 725
-    rx_atten: 255
+    rx_atten: 250
     
   hb:
     lofreq: 1710.0e+06
-    hifreq: 2.2.0e+09
+    hifreq: 2.2e+09
     srx_atten: 255 #0dB
-    txi_atten: 100
+    txi_atten: 100 #5db
     txe_atten: 0
-    rx_atten: 255
+    rx_atten: 250

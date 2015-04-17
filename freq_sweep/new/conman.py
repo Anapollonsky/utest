@@ -72,6 +72,6 @@ class Conman(object):
     def das_capture_power(sh, filename, offset, bandwidth):
         """ Calls the das_capture_power script. Args: Shell instance, filename, offset and bandwidth"""
         sh.sendline("./das_capture_power.m %s 307.2 %d %d" % (filename, int(offset/1e6), int(bandwidth/1e6)))
-        capture = sh.expect("Power in region: .*\d\.\d{2}")
+        capture = sh.expect("Power in region: .*\d\.\d*")
         return re.search("RMS Power: (\-?\d+\.?\d*).*RMS Power: (\-?\d+\.?\d*).*region: (\-?\d+\.?\d*)", capture).groups()
 

@@ -2,6 +2,7 @@ from BCI_Interface import BCI
 from Shell_Interface import Shell
 from FTP_Interface import FTP
 from N5180_Interface import N5180
+from conman import Conman
 from time import sleep
 import datetime
 from math import log
@@ -9,8 +10,9 @@ import csv
 import re
 import os
 import argparse
+import sys
 
-VERSION = 3
+VERSION = 4
 
 ## Argument parsing
 parser = argparse.ArgumentParser()
@@ -39,7 +41,7 @@ step = args.step
 bandwidth = args.bandwidth 
 timestamp =  datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')
 csv_filename = args.output or "tx_lo_sweep_%s_%s_%s_%s.csv" % (args.band, args.tx, args.board, timestamp)
-gain = 20
+gain = -20
 
 ## Check that cable compensation entry exists
 if not mxgaddr in conman.storage["loss_profiles_parsed"]:
@@ -96,8 +98,9 @@ with open(csv_filename, 'w') as csvfile:
         bci.set_lo(2, freq)
         loss = "%0.2f" % conman.get_loss_at_freqs(freq, mxgaddr)[0]
         mxg.set_freq(freq)
-        mxg.set_power(gain + loss)
+        mxg.set_power(gain + float(loss))
         sleep(2)
+        if int(freq) == int(lofreq): sleep(5)
         rxpower = bci.get_rx_power(1, 1, bandwidth)
 
         ## Capture

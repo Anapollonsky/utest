@@ -26,10 +26,6 @@ class N9020A(SCPI):
         # self._connection.read_very_eager()
         return self.echo(":SENS:FREQ:CENT " + str(freq) + " hz")
         
-    def set_external_gain(self, val):
-        """Set Ext Gain to value in dB"""
-        return self.echo("CORR:SA:GAIN " + val)
-        
     def set_mech_atten(self, val):
         """Set mechanical attenuation to value in dB"""
         return self.echo("POW:ATT " + str(val))
@@ -77,7 +73,6 @@ class N9020A(SCPI):
         self.capture()
         capture = self.get_marker_axis_value(marker, axis)
         self.set_marker_mode(marker, 'OFF')
-        self.capture()
         return capture
 
     def get_marker_axis_value(self, ind, axis):
@@ -85,7 +80,8 @@ class N9020A(SCPI):
         axis = axis.upper()
         axes = ['X','Y','Z']
         if axis in axes and ind in range(1, 13):
-            return self.echo("CALC:MARK" + str(ind) + ":" + axis + "?")
+            capture = self.echo("CALC:MARK" + str(ind) + ":" + axis + "?")
+            return float(re.search("(\-?\d\S*)", capture).groups()[0])
         else:
             return None
 
@@ -104,7 +100,10 @@ class N9020A(SCPI):
         capture = self.echo(":CORR:SA:GAIN?")
         value = re.search("(\-?\d\S+)", capture).groups()[0]
         return int(float(value))
-    
+
+    def set_external_gain(self, dbs):
+        return self.echo(":CORR:SA:GAIN %s db" % str(dbs))
+   
     def do_manual_alignment(self):
         self.sendline("CAL:EXP?")
         self.expect("0")
