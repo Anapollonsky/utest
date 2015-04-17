@@ -22,29 +22,29 @@ parser.add_argument("-s", "--step", help="step size, in hz", default = 1e6, type
 parser.add_argument("-b", "--bandwidth", help="bandwidth, in hz", default = 5e6, type=float)
 parser.add_argument("--version", help="print out version and exit",
                     action='version', version='%(prog)s ' + str(VERSION))
+parser.add_argument("-o", "--output", help="output filename" , default = None)
 
 args = parser.parse_args() # Parse arguments
 
+## Constants
+conman = Conman("loss_profiles.yml", "band_info.yml") # Manages connections and other global state
+band_info = dict(conman.storage["band_info"][args.band])
+
 ## Variable Configuration
-band_info = {"lb": {
-                 "lofreq": 700e6,
-                 "hifreq": 900e6,
-                 "rx_atten": 255 
-             },
-             "hb": {
-                 "lofreq": 1710e6, 
-                 "hifreq": 2.2e9,
-                 "rx_atten": 255
-             }
-}
 board = args.board
 mxgaddr = args.mxg
-lofreq = band_info[args.band]["lofreq"] 
-hifreq = band_info[args.band]["hifreq"]
+lofreq = band_info["lofreq"] 
+hifreq = band_info["hifreq"]
 step = args.step 
 bandwidth = args.bandwidth 
 timestamp =  datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')
-csv_filename = "rx_lo_sweep_%s_%s_%s_%s.csv" % (args.band, args.rx, args.board, timestamp)
+csv_filename = args.output or "tx_lo_sweep_%s_%s_%s_%s.csv" % (args.band, args.tx, args.board, timestamp)
+gain = 20
+
+## Check that cable compensation entry exists
+if not mxgaddr in conman.storage["loss_profiles_parsed"]:
+    print("Cannot find loss profile, exiting.")
+    sys.exit()
 
 ## Connections
 bci = BCI(board, "lucent", "password")
@@ -56,7 +56,7 @@ print("Connections established...")
 ## Setup
 
 # Transmitter
-rx_atten = band_info[args.band]["rx_atten"]
+rx_atten = band_info["rx_atten"]
 if args.rx == "1":
     bci.set_atten(10, rx_atten) 
     bci.set_atten(11, 235)
@@ -74,7 +74,6 @@ assert bci.ensure_reference_pll_lock("EXT", 1)
 print("Board configured...")
 
 # MXG Setup
-mxg.set_power(20)
 mxg.set_output(True)
 print("MXG Configured...")
 
@@ -95,7 +94,9 @@ with open(csv_filename, 'w') as csvfile:
     # Data
     for freq in range(int(lofreq), int(hifreq) + 1, int(step)):
         bci.set_lo(2, freq)
+        loss = "%0.2f" % conman.get_loss_at_freqs(freq, mxgaddr)[0]
         mxg.set_freq(freq)
+        mxg.set_power(gain + loss)
         sleep(2)
         rxpower = bci.get_rx_power(1, 1, bandwidth)
 
@@ -106,12 +107,10 @@ with open(csv_filename, 'w') as csvfile:
         ftp.get("/tmp/" + filename)
         
         ## Octave
-        sh.sendline("./das_capture_power.m %s 307.2 0 %d" % (filename, int(bandwidth/1e6)))
-        capture = sh.expect("Power in region: .*\d+\.\d+")
-        pwrtime, pwrfreq, regionpwr = re.search("RMS Power: (\-?\d+\.?\d*).*RMS Power: (\-?\d+\.?\d*).*region: (\-?\d+\.?\d*)", capture).groups()
+        pwrtime, pwrfreq, regionpwr = Conman.das_capture_power(sh, filename, 0, bandwidth)
 
         ## Bookkeeping
-        row = [float(freq), float(rxpower), float(pwrtime), float(pwrfreq), float(regionpwr)]
+        row = [float(freq), float(rxpower), float(pwrtime), float(pwrfreq), float(regionpwr), float(loss)]
         print("Appending row " + str(row))
         csvwriter.writerow(row)
 
